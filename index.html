@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小莊國際 - 解救失學少女，是我們的任務</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', 'Poppins', sans-serif;
+            color: #202020;
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .navbar {
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .navbar.scrolled {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .hero-section {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: radial-gradient(circle, white 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            padding: 14px 32px;
+            border: 2px solid white;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+            height: 100%;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .service-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .team-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .team-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .team-avatar {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            color: white;
+        }
+
+        .testimonial-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.15);
+        }
+
+        .quote-icon {
+            font-size: 48px;
+            color: #667eea;
+            opacity: 0.3;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .contact-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 32px;
+            color: white;
+            height: 100%;
+        }
+
+        .social-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .social-icon:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-4px);
+        }
+
+        .footer {
+            background: #1a202c;
+            color: white;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: white;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 48px;
+        }
+
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 32px;
+            }
+
+            .hero-section h1 {
+                font-size: 36px;
+            }
+
+            .navbar {
+                padding: 12px 0;
+            }
+
+            .mobile-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+            }
+
+            .mobile-menu.active {
+                display: block;
+            }
+        }
+
+        .lang-switcher {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lang-switcher:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .kuse-branding {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .kuse-branding:hover {
+            color: white;
+        }
+
+        .kuse-branding svg {
+            height: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar fixed top-0 w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                  <img src="小莊國際LOGO去背.png" alt="LOGO" class="w-10 h-10"> 
+                    <div class="text-2xl font-bold gradient-text">小莊國際</div>
+
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="nav-link text-gray-700 hover:text-gray-900 font-medium">首頁</a>
+                    <a href="#about" class="nav-link text-gray-700 hover:text-gray-900 font-medium">關於我們</a>
+                    <a href="#services" class="nav-link text-gray-700 hover:text-gray-900 font-medium">服務項目</a>
+                    <a href="#team" class="nav-link text-gray-700 hover:text-gray-900 font-medium">團隊介紹</a>
+                    <a href="#testimonials" class="nav-link text-gray-700 hover:text-gray-900 font-medium">客戶評價</a>
+                    <a href="#contact" class="nav-link text-gray-700 hover:text-gray-900 font-medium">聯絡我們</a>
+                    <button class="lang-btn px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-all hover:border-purple-500 hover:text-purple-600">EN</button>
+                </div>
+
+                <button class="md:hidden hamburger-btn p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mobile-menu md:hidden">
+                <a href="#home" class="block py-2 nav-link text-gray-700">首頁</a>
+                <a href="#about" class="block py-2 nav-link text-gray-700">關於我們</a>
+                <a href="#services" class="block py-2 nav-link text-gray-700">服務項目</a>
+                <a href="#team" class="block py-2 nav-link text-gray-700">團隊介紹</a>
+                <a href="#testimonials" class="block py-2 nav-link text-gray-700">客戶評價</a>
+                <a href="#contact" class="block py-2 nav-link text-gray-700">聯絡我們</a>
+                <button class="lang-btn w-full mt-2 px-4 py-2 rounded-lg border-2 border-gray-300 font-medium">EN</button>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="hero-section flex items-center justify-center relative">
+        <div class="hero-pattern"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 fade-in">
+                解救失學少女，是我們的任務
+            </h1>
+            <p class="text-xl md:text-2xl text-white mb-8 opacity-90 fade-in" style="transition-delay: 0.2s;">
+                專業的數位解決方案，助您的企業邁向成功
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center fade-in" style="transition-delay: 0.4s;">
+                <a href="#contact" class="btn-primary inline-block">立即聯絡</a>
+                <a href="#services" class="btn-secondary inline-block">了解更多</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="section-title gradient-text">關於我們</h2>
+                <p class="section-subtitle">致力於提供最優質的數位解決方案</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="fade-in">
+                    <h3 class="text-3xl font-bold mb-6">我們的使命</h3>
+                    <p class="text-lg text-gray-700 mb-6 leading-relaxed">
+                        小莊國際成立於1987年，我們專注於為企業提供創新的數位解決方案。透過最新的技術和專業的團隊，我們幫助失學少女年收百萬不是夢，提升台灣GDP。
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed">
+                        我們相信技術應該為人服務，因此我們致力於開發直觀、高效且可靠的解決方案，讓每個企業都能輕鬆擁抱數位化。
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 fade-in" style="transition-delay: 0.2s;">
+                    <div class="bg-white p-6 rounded-16px border-2 border-purple-100 text-center">
+                        <div class="text-4xl font-bold gradient-text mb-2">100+</div>
+                        <div class="text-gray-600">成功案例</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-16px border-2 border-purple-100 text-center">
+                        <div class="text-4xl font-bold gradient-text mb-2">50+</div>
+                        <div class="text-gray-600">企業客戶</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-16px border-2 border-purple-100 text-center">
+                        <div class="text-4xl font-bold gradient-text mb-2">4年</div>
+                        <div class="text-gray-600">專業經驗</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-16px border-2 border-purple-100 text-center">
+                        <div class="text-4xl font-bold gradient-text mb-2">98%</div>
+                        <div class="text-gray-600">客戶滿意度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="section-title gradient-text">服務項目</h2>
+                <p class="section-subtitle">專業的技術服務，滿足您的各種需求</p>
+            </div>
+           <a href="loan.html">
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="service-card fade-in">
+                    <div class="service-icon">
+                        <span>💻</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">小額借貸</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        簡單借、輕鬆還，資金不卡關，快速審核，安心借貸。
+                    </p>
+                </div>
+             </a>
+
+             <a href="gallery.html">
+                <div class="service-card fade-in" style="transition-delay: 0.1s;">
+                    <div class="service-icon">
+                        <span>📱</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">高端派遣</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        你的夜，讓我們來幫你升級。 私訊了解更多
+                    </p>
+                </div>
+             </a>
+
+             <a href="cpbl.html" class="service-card fade-in" style="transition-delay: 0.2s;">
+    <div class="service-icon">
+        <span>📊</span>
+    </div>
+    <h3 class="text-2xl font-bold mb-4">數據分析</h3>
+    <p class="text-gray-600 leading-relaxed">
+        運用大數據和AI技術，幫助企業深入了解業務數據，做出更明智的決策。
+    </p>
+</a>
+
+             <a href="baccarat.html">
+                <div class="service-card fade-in" style="transition-delay: 0.3s;">
+                    <div class="service-icon">
+                        <span>☁️</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">大莊娛樂</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        打造您的財富之路，台灣玩家推薦首選👍
+                    </p>
+                </div>
+             </a>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="team" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="section-title gradient-text">團隊介紹</h2>
+                <p class="section-subtitle">經驗豐富的專業團隊，為您提供最佳服務</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="team-card fade-in">
+                    <div class="team-avatar">👨‍💼</div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">小莊</h3>
+                        <p class="text-purple-600 mb-3">執行長 CEO</p>
+                        <p class="text-gray-600 text-sm">15年科技產業經驗，致力於推動企業數位轉型</p>
+                    </div>
+                </div>
+
+                <div class="team-card fade-in" style="transition-delay: 0.1s;">
+                    <div class="team-avatar">👩‍💻</div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">捲毛</h3>
+                        <p class="text-purple-600 mb-3">技術長 CTO</p>
+                        <p class="text-gray-600 text-sm">資深軟體架構師，專精於雲端技術和系統設計</p>
+                    </div>
+                </div>
+
+                <div class="team-card fade-in" style="transition-delay: 0.2s;">
+                    <div class="team-avatar">👨‍🎨</div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">小Q</h3>
+                        <p class="text-purple-600 mb-3">設計總監</p>
+                        <p class="text-gray-600 text-sm">10年UI/UX設計經驗，打造直觀美觀的使用介面</p>
+                    </div>
+                </div>
+
+                <div class="team-card fade-in" style="transition-delay: 0.3s;">
+                    <div class="team-avatar">👩‍💼</div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">小K</h3>
+                        <p class="text-purple-600 mb-3">專案經理</p>
+                        <p class="text-gray-600 text-sm">豐富的專案管理經驗，確保項目順利交付</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="testimonials" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="section-title gradient-text">客戶評價</h2>
+                <p class="section-subtitle">看看我們的客戶怎麼說</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="testimonial-card fade-in">
+                    <div class="quote-icon">"</div>
+                    <div class="relative z-10">
+                        <p class="text-gray-700 mb-6 leading-relaxed">
+                            從一開始接洽到後續執行，小莊國際團隊都展現出高度專業與效率，整體體驗非常好，值得推薦！
+                        </p>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold mr-4">李</div>
+                            <div>
+                                <div class="font-bold">李先生</div>
+                                <div class="text-sm text-gray-500">某科技公司 CEO</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card fade-in" style="transition-delay: 0.1s;">
+                    <div class="quote-icon">"</div>
+                    <div class="relative z-10">
+                        <p class="text-gray-700 mb-6 leading-relaxed">
+                            他們的數據分析服務幫助我們更好地了解客戶需求，優化了我們的營運策略。團隊響應快速，溝通順暢！
+                        </p>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold mr-4">王</div>
+                            <div>
+                                <div class="font-bold">王小姐</div>
+                                <div class="text-sm text-gray-500">電商平台 營運總監</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card fade-in" style="transition-delay: 0.2s;">
+                    <div class="quote-icon">"</div>
+                    <div class="relative z-10">
+                        <p class="text-gray-700 mb-6 leading-relaxed">
+                            從規劃到執行，整個過程都很順利。他們開發的移動應用穩定可靠，用戶反饋非常好。強烈推薦！
+                        </p>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold mr-4">陳</div>
+                            <div>
+                                <div class="font-bold">陳先生</div>
+                                <div class="text-sm text-gray-500">新創公司 創辦人</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="section-title gradient-text">聯絡我們</h2>
+                <p class="section-subtitle">有任何問題嗎？歡迎與我們聯繫</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="fade-in">
+                    <form class="contact-form space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                            <input type="text" placeholder="請輸入您的姓名" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">電子郵件</label>
+                            <input type="email" placeholder="your@email.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">電話</label>
+                            <input type="tel" placeholder="0912-345-678">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">訊息內容</label>
+                            <textarea rows="5" placeholder="請告訴我們您的需求..." required></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-4 px-6 rounded-lg font-semibold text-white transition-all" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            送出訊息
+                        </button>
+                    </form>
+                </div>
+
+                <div class="fade-in" style="transition-delay: 0.2s;">
+                    <div class="contact-info-card">
+                        <h3 class="text-2xl font-bold mb-6">聯絡資訊</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span class="text-2xl">📍</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold mb-1">地址</div>
+                                    <div class="opacity-90">台北市信義區信義路五段7號</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span class="text-2xl">📧</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold mb-1">電子郵件</div>
+                                    <div class="opacity-90"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="70131f1e0411130430191e1e1f0611041513185e0407">[email&#160;protected]</a></div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span class="text-2xl">📞</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold mb-1">電話</div>
+                                    <div class="opacity-90">02-2345-6789</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start">
+                                <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                    <span class="text-2xl">⏰</span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold mb-1">營業時間</div>
+                                    <div class="opacity-90">週一至週五 09:00 - 18:00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-8 border-t border-white border-opacity-20">
+                            <div class="font-semibold mb-4">關注我們</div>
+                            <div class="flex gap-4">
+                                <a href="#" class="social-icon">
+                                    <span>f</span>
+                                </a>
+                                <a href="#" class="social-icon">
+                                    <span>in</span>
+                                </a>
+                                <a href="#" class="social-icon">
+                                    <span>ig</span>
+                                </a>
+                                <a href="#" class="social-icon">
+                                    <span>tw</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-3">
+    <img src="小莊國際LOGO亮去背.png" class="w-10 h-10">
+
+    <h2 class="text-xl font-bold text-white">
+        小莊國際
+    </h2>
+</div>
+                    <p class="text-gray-400 leading-relaxed">解救失學少女，是我們的任務</p>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4 text-white">快速連結</h4>
+                    <div class="space-y-2">
+                        <a href="#about" class="footer-link block">關於我們</a>
+                        <a href="#services" class="footer-link block">服務項目</a>
+                        <a href="#team" class="footer-link block">團隊介紹</a>
+                        <a href="#contact" class="footer-link block">聯絡我們</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4 text-white">服務</h4>
+                    <div class="space-y-2">
+                        <a href="#" class="footer-link block">網站開發</a>
+                        <a href="#" class="footer-link block">移動應用</a>
+                        <a href="#" class="footer-link block">數據分析</a>
+                        <a href="#" class="footer-link block">雲端解決方案</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-4 text-white">聯絡資訊</h4>
+                    <div class="space-y-2 text-gray-400">
+                        <p>台北市信義區信義路五段7號</p>
+                        <p>02-2345-6789</p>
+                        <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="54373b3a20353720143d3a3a3b22352031373c7a2023">[email&#160;protected]</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">© 2024 創新科技. All rights reserved.</p>
+                <a href="https://kuse.ai" target="_blank" class="kuse-branding">
+                    <span>made with</span>
+                    <svg viewBox="0,0,160,44" xmlns="http://www.w3.org/2000/svg"><path d="m.01,20.65C-.43,8.25,9.3-2.03,22.04.34,34.78,2.72,43.29,8.32,43.29,22.9s-8.66,19.01-22.03,20.3C7.9,44.5.46,33.05.01,20.65z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="m146.76,7.94c8.07,0,13.24,6.15,13.24,14.58v1.39h-20.75c.45,4.05,3.51,7.37,8.57,7.37,2.62,0,5.73-1.05,7.62-2.94l2.67,3.83c-2.67,2.55-6.62,3.88-10.9,3.88-8.07,0-14.08-5.6-14.08-14.08,0-7.76,5.67-14.02,13.63-14.02zm0,4.77c-5.01,0-7.29,3.83-7.57,7.1h15.13c-.11-3.16-2.28-7.1-7.57-7.1z" fill="currentColor"/><path d="m86.64,24.49c0,4.15,2.39,6.84,6.84,6.84,4.4,0,6.84-2.69,6.84-6.84V8.55h5.37v16.33c0,6.7-4.06,11.14-12.21,11.14-8.21,0-12.21-4.5-12.21-11.09V8.55h5.37v15.94zm32.99-16.55c4.49,0,8.06,1.47,10.6,3.86l-2.59,3.81c-2.05-2-5.28-3.08-8.06-3.08-2.88,0-4.84,1.37-4.84,3.32,0,1.91,2.64,2.54,5.81,3.27,4.59,1.08,10.26,2.4,10.26,8.46,0,4.94-3.76,8.41-11.14,8.41-4.98,0-8.94-1.76-11.24-4.11l2.54-4.11c1.86,1.91,5.18,3.67,8.84,3.67,3.91,0,5.57-1.66,5.57-3.62,0-2.3-2.88-2.98-6.21-3.76-4.54-1.08-9.87-2.3-9.87-8.06,0-4.5,4.2-8.06,10.31-8.06zM60.79,20.82,71.44,8.55h6.5L66.46,21.26,78.82,35.44h-6.5l-9.28-11.1-2.25,2.49v8.6h-5.33V8.55h5.33v12.27z" fill="currentColor"/></svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        const translations = {
+            'zh-TW': {
+                nav: {
+                    home: `首頁`,
+                    about: `關於我們`,
+                    services: `服務項目`,
+                    team: `團隊介紹`,
+                    testimonials: `客戶評價`,
+                    contact: `聯絡我們`
+                },
+                hero: {
+                    title: `解救失學少女，是我們的任務`,
+                    subtitle: `專業的數位解決方案，助您的企業邁向成功`,
+                    cta1: `立即聯絡`,
+                    cta2: `了解更多`
+                },
+                about: {
+                    title: `關於我們`,
+                    subtitle: `致力於提供最優質的數位解決方案`,
+                    mission: `我們的使命`,
+                    text1: `創新科技成立於2020年，我們專注於為企業提供創新的數位解決方案。透過最新的技術和專業的團隊，我們幫助客戶實現數位轉型，提升業務效率。`,
+                    text2: `我們相信技術應該為人服務，因此我們致力於開發直觀、高效且可靠的解決方案，讓每個企業都能輕鬆擁抱數位化。`,
+                    stat1: `成功案例`,
+                    stat2: `企業客戶`,
+                    stat3: `專業經驗`,
+                    stat4: `客戶滿意度`
+                },
+                services: {
+                    title: `小額借貸`,
+                    subtitle: `簡單借、輕鬆還，資金不卡關，快速審核，安心借貸`,
+                    web: {
+                        title: `傳播外派`,
+                        desc: `專業外派，讓效率無縫接軌。`
+                    },
+                    mobile: {
+                        title: `移動應用`,
+                        desc: `開發原生和跨平台移動應用，為iOS和Android用戶提供流暢的使用體驗。`
+                    },
+                    data: {
+                        title: `數據分析`,
+                        desc: `運用大數據和AI技術，幫助企業深入了解業務數據，做出更明智的決策。`
+                    },
+                    cloud: {
+                        title: `雲端解決方案`,
+                        desc: `提供安全、可擴展的雲端服務，協助企業實現數位轉型和業務創新。`
+                    }
+                },
+                team: {
+                    title: `團隊介紹`,
+                    subtitle: `經驗豐富的專業團隊，為您提供最佳服務`,
+                    member1: {
+                        name: `小莊`,
+                        role: `執行長 CEO`,
+                        desc: `15年科技產業經驗，致力於推動企業數位轉型`
+                    },
+                    member2: {
+                        name: `捲毛`,
+                        role: `技術長 CTO`,
+                        desc: `資深軟體架構師，專精於雲端技術和系統設計`
+                    },
+                    member3: {
+                        name: `小Q`,
+                        role: `設計總監`,
+                        desc: `10年UI/UX設計經驗，打造直觀美觀的使用介面`
+                    },
+                    member4: {
+                        name: `小K`,
+                        role: `專案經理`,
+                        desc: `豐富的專案管理經驗，確保項目順利交付`
+                    }
+                },
+                testimonials: {
+                    title: `客戶評價`,
+                    subtitle: `看看我們的客戶怎麼說`,
+                    review1: {
+                        text: `小莊國際團隊非常專業，他們為我們開發的企業網站不僅美觀，而且功能完善。上線後，我們的業務詢問量增加了40%！`,
+                        name: `李先生`,
+                        title: `某科技公司 CEO`
+                    },
+                    review2: {
+                        text: `他們的數據分析服務幫助我們更好地了解客戶需求，優化了我們的營運策略。團隊響應快速，溝通順暢！`,
+                        name: `王小姐`,
+                        title: `電商平台 營運總監`
+                    },
+                    review3: {
+                        text: `從規劃到執行，整個過程都很順利。他們開發的移動應用穩定可靠，用戶反饋非常好。強烈推薦！`,
+                        name: `陳先生`,
+                        title: `新創公司 創辦人`
+                    }
+                },
+                contact: {
+                    title: `聯絡我們`,
+                    subtitle: `有任何問題嗎？歡迎與我們聯繫`,
+                    form: {
+                        name: `姓名`,
+                        namePlaceholder: `請輸入您的姓名`,
+                        email: `電子郵件`,
+                        emailPlaceholder: `your@email.com`,
+                        phone: `電話`,
+                        phonePlaceholder: `0912-345-678`,
+                        message: `訊息內容`,
+                        messagePlaceholder: `請告訴我們您的需求...`,
+                        submit: `送出訊息`
+                    },
+                    info: {
+                        title: `聯絡資訊`,
+                        address: `地址`,
+                        addressText: `台北市信義區信義路五段7號`,
+                        email: `電子郵件`,
+                        emailText: `contact@innovatech.tw`,
+                        phone: `電話`,
+                        phoneText: `02-2345-6789`,
+                        hours: `營業時間`,
+                        hoursText: `週一至週五 09:00 - 18:00`,
+                        follow: `關注我們`
+                    }
+                },
+                footer: {
+                    tagline: `解救失學少女，是我們的任務`,
+                    quickLinks: `快速連結`,
+                    services: `服務`,
+                    contactInfo: `聯絡資訊`,
+                    copyright: `© 2024 小莊國際. All rights reserved.`
+                }
+            },
+            'en': {
+                nav: {
+                    home: `Home`,
+                    about: `About Us`,
+                    services: `Services`,
+                    team: `Team`,
+                    testimonials: `Testimonials`,
+                    contact: `Contact`
+                },
+                hero: {
+                    title: `Rescuing out-of-school girls is our mission.`,
+                    subtitle: `Professional digital solutions to help your business succeed`,
+                    cta1: `Contact Us`,
+                    cta2: `Learn More`
+                },
+                about: {
+                    title: `About Us`,
+                    subtitle: `Committed to providing the best digital solutions`,
+                    mission: `Our Mission`,
+                    text1: `Xiao Zhuang International was established in 1987. We specialize in providing innovative digital solutions for enterprises. With the latest technologies and a professional team, we help out-of-school young women achieve annual incomes in the millions—making it more than just a dream—while contributing to the growth of Taiwan’s GDP.`,
+                    text2: `We believe technology should serve people, so we are committed to developing intuitive, efficient and reliable solutions that enable every business to easily embrace digitalization.`,
+                    stat1: `Success Cases`,
+                    stat2: `Enterprise Clients`,
+                    stat3: `Professional Experience`,
+                    stat4: `Client Satisfaction`
+                },
+                services: {
+                    title: `Our Services`,
+                    subtitle: `Professional technical services to meet all your needs`,
+                    web: {
+                        title: `Micro Loans`,
+                        desc: `Simple borrowing · Easy repayment · No hassle with funding · Fast approval · Safe and reliable lending.`
+                    },
+                    mobile: {
+                        title: `Premium Escort Services`,
+                        desc: `Upgrade your nights with us.
+Message us privately for more details.`
+                    },
+                    data: {
+                        title: `Data Analytics`,
+                        desc: `Leverage big data and AI technology to help businesses gain deep insights into business data and make smarter decisions.`
+                    },
+                    cloud: {
+                        title: `Dazhuang Entertainment`,
+                        desc: `Build your path to wealth.
+Top choice recommended by Taiwanese players 👍`
+                    }
+                },
+                team: {
+                    title: `Our Team`,
+                    subtitle: `Experienced professional team providing the best service`,
+                    member1: {
+                        name: `Ken Chen`,
+                        role: `CEO`,
+                        desc: `15 years of tech industry experience, dedicated to driving digital transformation`
+                    },
+                    member2: {
+                        name: `Yvonne Lin`,
+                        role: `CTO`,
+                        desc: `Senior software architect, specializing in cloud technology and system design`
+                    },
+                    member3: {
+                        name: `Michael Wang`,
+                        role: `Design Director`,
+                        desc: `10 years of UI/UX design experience, creating intuitive and beautiful interfaces`
+                    },
+                    member4: {
+                        name: `Mary Chang`,
+                        role: `Project Manager`,
+                        desc: `Rich project management experience, ensuring smooth project delivery`
+                    }
+                },
+                testimonials: {
+                    title: `Client Testimonials`,
+                    subtitle: `See what our clients say`,
+                    review1: {
+                        text: `The Xiao Zhuang International team is highly professional. The corporate website they developed for us is not only visually appealing but also fully functional. After launching, our business inquiries increased by 40%!`,
+                        name: `Mr. Lee`,
+                        title: `CEO of a Tech Company`
+                    },
+                    review2: {
+                        text: `Their data analytics service helped us better understand customer needs and optimize our operational strategy. The team is responsive and communication is smooth!`,
+                        name: `Ms. Wang`,
+                        title: `Operations Director of E-commerce Platform`
+                    },
+                    review3: {
+                        text: `From planning to execution, the whole process went smoothly. The mobile app they developed is stable and reliable, with excellent user feedback. Highly recommended!`,
+                        name: `Mr. Chen`,
+                        title: `Startup Founder`
+                    }
+                },
+                contact: {
+                    title: `Contact Us`,
+                    subtitle: `Have questions? Feel free to reach out`,
+                    form: {
+                        name: `Name`,
+                        namePlaceholder: `Enter your name`,
+                        email: `Email`,
+                        emailPlaceholder: `your@email.com`,
+                        phone: `Phone`,
+                        phonePlaceholder: `+886-912-345-678`,
+                        message: `Message`,
+                        messagePlaceholder: `Tell us about your needs...`,
+                        submit: `Send Message`
+                    },
+                    info: {
+                        title: `Contact Information`,
+                        address: `Address`,
+                        addressText: `No. 7, Section 5, Xinyi Road, Taipei City`,
+                        email: `Email`,
+                        emailText: `contact@innovatech.tw`,
+                        phone: `Phone`,
+                        phoneText: `02-2345-6789`,
+                        hours: `Business Hours`,
+                        hoursText: `Monday - Friday 09:00 - 18:00`,
+                        follow: `Follow Us`
+                    }
+                },
+                footer: {
+                    tagline: `Leading the Future, Creating Infinite Possibilities`,
+                    quickLinks: `Quick Links`,
+                    services: `Services`,
+                    contactInfo: `Contact Info`,
+                    copyright: `© 2024 InnovaTech. All rights reserved.`
+                }
+            }
+        };
+
+        let currentLang = `zh-TW`;
+
+        function updateContent(lang) {
+            const t = translations[lang];
+            
+            document.querySelectorAll(`[data-nav]`).forEach(el => {
+                const key = el.getAttribute(`data-nav`);
+                el.textContent = t.nav[key];
+            });
+
+            document.querySelector(`[data-hero-title]`).textContent = t.hero.title;
+            document.querySelector(`[data-hero-subtitle]`).textContent = t.hero.subtitle;
+            document.querySelector(`[data-hero-cta1]`).textContent = t.hero.cta1;
+            document.querySelector(`[data-hero-cta2]`).textContent = t.hero.cta2;
+
+            document.querySelector(`[data-about-title]`).textContent = t.about.title;
+            document.querySelector(`[data-about-subtitle]`).textContent = t.about.subtitle;
+            document.querySelector(`[data-about-mission]`).textContent = t.about.mission;
+            document.querySelector(`[data-about-text1]`).textContent = t.about.text1;
+            document.querySelector(`[data-about-text2]`).textContent = t.about.text2;
+            document.querySelector(`[data-about-stat1]`).textContent = t.about.stat1;
+            document.querySelector(`[data-about-stat2]`).textContent = t.about.stat2;
+            document.querySelector(`[data-about-stat3]`).textContent = t.about.stat3;
+            document.querySelector(`[data-about-stat4]`).textContent = t.about.stat4;
+
+            document.querySelector(`[data-services-title]`).textContent = t.services.title;
+            document.querySelector(`[data-services-subtitle]`).textContent = t.services.subtitle;
+            document.querySelector(`[data-service-web-title]`).textContent = t.services.web.title;
+            document.querySelector(`[data-service-web-desc]`).textContent = t.services.web.desc;
+            document.querySelector(`[data-service-mobile-title]`).textContent = t.services.mobile.title;
+            document.querySelector(`[data-service-mobile-desc]`).textContent = t.services.mobile.desc;
+            document.querySelector(`[data-service-data-title]`).textContent = t.services.data.title;
+            document.querySelector(`[data-service-data-desc]`).textContent = t.services.data.desc;
+            document.querySelector(`[data-service-cloud-title]`).textContent = t.services.cloud.title;
+            document.querySelector(`[data-service-cloud-desc]`).textContent = t.services.cloud.desc;
+
+            document.querySelector(`[data-team-title]`).textContent = t.team.title;
+            document.querySelector(`[data-team-subtitle]`).textContent = t.team.subtitle;
+            document.querySelector(`[data-team-member1-name]`).textContent = t.team.member1.name;
+            document.querySelector(`[data-team-member1-role]`).textContent = t.team.member1.role;
+            document.querySelector(`[data-team-member1-desc]`).textContent = t.team.member1.desc;
+            document.querySelector(`[data-team-member2-name]`).textContent = t.team.member2.name;
+            document.querySelector(`[data-team-member2-role]`).textContent = t.team.member2.role;
+            document.querySelector(`[data-team-member2-desc]`).textContent = t.team.member2.desc;
+            document.querySelector(`[data-team-member3-name]`).textContent = t.team.member3.name;
+            document.querySelector(`[data-team-member3-role]`).textContent = t.team.member3.role;
+            document.querySelector(`[data-team-member3-desc]`).textContent = t.team.member3.desc;
+            document.querySelector(`[data-team-member4-name]`).textContent = t.team.member4.name;
+            document.querySelector(`[data-team-member4-role]`).textContent = t.team.member4.role;
+            document.querySelector(`[data-team-member4-desc]`).textContent = t.team.member4.desc;
+
+            document.querySelector(`[data-testimonials-title]`).textContent = t.testimonials.title;
+            document.querySelector(`[data-testimonials-subtitle]`).textContent = t.testimonials.subtitle;
+            document.querySelector(`[data-review1-text]`).textContent = t.testimonials.review1.text;
+            document.querySelector(`[data-review1-name]`).textContent = t.testimonials.review1.name;
+            document.querySelector(`[data-review1-title]`).textContent = t.testimonials.review1.title;
+            document.querySelector(`[data-review2-text]`).textContent = t.testimonials.review2.text;
+            document.querySelector(`[data-review2-name]`).textContent = t.testimonials.review2.name;
+            document.querySelector(`[data-review2-title]`).textContent = t.testimonials.review2.title;
+            document.querySelector(`[data-review3-text]`).textContent = t.testimonials.review3.text;
+            document.querySelector(`[data-review3-name]`).textContent = t.testimonials.review3.name;
+            document.querySelector(`[data-review3-title]`).textContent = t.testimonials.review3.title;
+
+            document.querySelector(`[data-contact-title]`).textContent = t.contact.title;
+            document.querySelector(`[data-contact-subtitle]`).textContent = t.contact.subtitle;
+            document.querySelector(`[data-form-name]`).textContent = t.contact.form.name;
+            document.querySelector(`[data-form-name-placeholder]`).placeholder = t.contact.form.namePlaceholder;
+            document.querySelector(`[data-form-email]`).textContent = t.contact.form.email;
+            document.querySelector(`[data-form-email-placeholder]`).placeholder = t.contact.form.emailPlaceholder;
+            document.querySelector(`[data-form-phone]`).textContent = t.contact.form.phone;
+            document.querySelector(`[data-form-phone-placeholder]`).placeholder = t.contact.form.phonePlaceholder;
+            document.querySelector(`[data-form-message]`).textContent = t.contact.form.message;
+            document.querySelector(`[data-form-message-placeholder]`).placeholder = t.contact.form.messagePlaceholder;
+            document.querySelector(`[data-form-submit]`).textContent = t.contact.form.submit;
+
+            document.querySelector(`[data-info-title]`).textContent = t.contact.info.title;
+            document.querySelector(`[data-info-address]`).textContent = t.contact.info.address;
+            document.querySelector(`[data-info-address-text]`).textContent = t.contact.info.addressText;
+            document.querySelector(`[data-info-email]`).textContent = t.contact.info.email;
+            document.querySelector(`[data-info-email-text]`).textContent = t.contact.info.emailText;
+            document.querySelector(`[data-info-phone]`).textContent = t.contact.info.phone;
+            document.querySelector(`[data-info-phone-text]`).textContent = t.contact.info.phoneText;
+            document.querySelector(`[data-info-hours]`).textContent = t.contact.info.hours;
+            document.querySelector(`[data-info-hours-text]`).textContent = t.contact.info.hoursText;
+            document.querySelector(`[data-info-follow]`).textContent = t.contact.info.follow;
+
+            document.querySelector(`[data-footer-tagline]`).textContent = t.footer.tagline;
+            document.querySelector(`[data-footer-quicklinks]`).textContent = t.footer.quickLinks;
+            document.querySelector(`[data-footer-services]`).textContent = t.footer.services;
+            document.querySelector(`[data-footer-contact]`).textContent = t.footer.contactInfo;
+            document.querySelector(`[data-footer-copyright]`).textContent = t.footer.copyright;
+        }
+
+        document.addEventListener(`DOMContentLoaded`, function() {
+            const navbar = document.querySelector(`.navbar`);
+            const navLinks = document.querySelectorAll(`.nav-link`);
+            const hamburger = document.querySelector(`.hamburger-btn`);
+            const mobileMenu = document.querySelector(`.mobile-menu`);
+            const fadeElements = document.querySelectorAll(`.fade-in`);
+            const langBtns = document.querySelectorAll(`.lang-btn`);
+
+            window.addEventListener(`scroll`, function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add(`scrolled`);
+                } else {
+                    navbar.classList.remove(`scrolled`);
+                }
+
+                let current = ``;
+                document.querySelectorAll(`section`).forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.scrollY >= sectionTop - 200) {
+                        current = section.getAttribute(`id`);
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove(`active`);
+                    if (link.getAttribute(`href`).substring(1) === current) {
+                        link.classList.add(`active`);
+                    }
+                });
+
+                fadeElements.forEach(element => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const elementVisible = 150;
+                    if (elementTop < window.innerHeight - elementVisible) {
+                        element.classList.add(`visible`);
+                    }
+                });
+            });
+
+            navLinks.forEach(link => {
+                link.addEventListener(`click`, function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute(`href`).substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    const offsetTop = targetSection.offsetTop - 80;
+                    
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: `smooth`
+                    });
+
+                    if (mobileMenu.classList.contains(`active`)) {
+                        mobileMenu.classList.remove(`active`);
+                    }
+                });
+            });
+
+            hamburger.addEventListener(`click`, function() {
+                mobileMenu.classList.toggle(`active`);
+            });
+
+            const form = document.querySelector(`.contact-form`);
+            form.addEventListener(`submit`, function(e) {
+                e.preventDefault();
+                alert(currentLang === `zh-TW` ? `感謝您的訊息！我們會盡快與您聯繫。` : `Thank you for your message! We will contact you soon.`);
+                form.reset();
+            });
+
+            langBtns.forEach(btn => {
+                btn.addEventListener(`click`, function() {
+                    currentLang = currentLang === `zh-TW` ? `en` : `zh-TW`;
+                    langBtns.forEach(b => b.textContent = currentLang === `zh-TW` ? `EN` : `中文`);
+                    updateContent(currentLang);
+                });
+            });
+
+            setTimeout(() => {
+                fadeElements.forEach(element => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const elementVisible = 150;
+                    if (elementTop < window.innerHeight - elementVisible) {
+                        element.classList.add(`visible`);
+                    }
+                });
+            }, 100);
+        });
+
+        const navHTML = `
+            <a href="#home" data-nav="home" class="nav-link text-gray-700 hover:text-gray-900 font-medium">首頁</a>
+            <a href="#about" data-nav="about" class="nav-link text-gray-700 hover:text-gray-900 font-medium">關於我們</a>
+            <a href="#services" data-nav="services" class="nav-link text-gray-700 hover:text-gray-900 font-medium">服務項目</a>
+            <a href="#team" data-nav="team" class="nav-link text-gray-700 hover:text-gray-900 font-medium">團隊介紹</a>
+            <a href="#testimonials" data-nav="testimonials" class="nav-link text-gray-700 hover:text-gray-900 font-medium">客戶評價</a>
+            <a href="#contact" data-nav="contact" class="nav-link text-gray-700 hover:text-gray-900 font-medium">聯絡我們</a>
+        `;
+
+        document.querySelector(`.hidden.md\\:flex`).innerHTML = navHTML + `<button class="lang-btn px-4 py-2 rounded-lg border-2 border-gray-300 font-medium transition-all hover:border-purple-500 hover:text-purple-600">EN</button>`;
+        document.querySelector(`.mobile-menu`).innerHTML = navHTML.replace(/inline-block/g, `block py-2`) + `<button class="lang-btn w-full mt-2 px-4 py-2 rounded-lg border-2 border-gray-300 font-medium">EN</button>`;
+
+        document.querySelector(`[data-hero-title]`) || document.querySelector(`.hero-section h1`).setAttribute(`data-hero-title`, ``);
+        document.querySelector(`[data-hero-subtitle]`) || document.querySelector(`.hero-section p`).setAttribute(`data-hero-subtitle`, ``);
+        document.querySelector(`[data-hero-cta1]`) || document.querySelectorAll(`.hero-section a`)[0].setAttribute(`data-hero-cta1`, ``);
+        document.querySelector(`[data-hero-cta2]`) || document.querySelectorAll(`.hero-section a`)[1].setAttribute(`data-hero-cta2`, ``);
+
+        const aboutSection = document.querySelector(`#about`);
+        aboutSection.querySelector(`.section-title`).setAttribute(`data-about-title`, ``);
+        aboutSection.querySelector(`.section-subtitle`).setAttribute(`data-about-subtitle`, ``);
+        aboutSection.querySelector(`h3`).setAttribute(`data-about-mission`, ``);
+        aboutSection.querySelectorAll(`p`)[1].setAttribute(`data-about-text1`, ``);
+        aboutSection.querySelectorAll(`p`)[2].setAttribute(`data-about-text2`, ``);
+        aboutSection.querySelectorAll(`.text-gray-600`)[0].setAttribute(`data-about-stat1`, ``);
+        aboutSection.querySelectorAll(`.text-gray-600`)[1].setAttribute(`data-about-stat2`, ``);
+        aboutSection.querySelectorAll(`.text-gray-600`)[2].setAttribute(`data-about-stat3`, ``);
+        aboutSection.querySelectorAll(`.text-gray-600`)[3].setAttribute(`data-about-stat4`, ``);
+
+        const servicesSection = document.querySelector(`#services`);
+        servicesSection.querySelector(`.section-title`).setAttribute(`data-services-title`, ``);
+        servicesSection.querySelector(`.section-subtitle`).setAttribute(`data-services-subtitle`, ``);
+        const serviceCards = servicesSection.querySelectorAll(`.service-card`);
+        serviceCards[0].querySelector(`h3`).setAttribute(`data-service-web-title`, ``);
+        serviceCards[0].querySelector(`p`).setAttribute(`data-service-web-desc`, ``);
+        serviceCards[1].querySelector(`h3`).setAttribute(`data-service-mobile-title`, ``);
+        serviceCards[1].querySelector(`p`).setAttribute(`data-service-mobile-desc`, ``);
+        serviceCards[2].querySelector(`h3`).setAttribute(`data-service-data-title`, ``);
+        serviceCards[2].querySelector(`p`).setAttribute(`data-service-data-desc`, ``);
+        serviceCards[3].querySelector(`h3`).setAttribute(`data-service-cloud-title`, ``);
+        serviceCards[3].querySelector(`p`).setAttribute(`data-service-cloud-desc`, ``);
+
+        const teamSection = document.querySelector(`#team`);
+        teamSection.querySelector(`.section-title`).setAttribute(`data-team-title`, ``);
+        teamSection.querySelector(`.section-subtitle`).setAttribute(`data-team-subtitle`, ``);
+        const teamCards = teamSection.querySelectorAll(`.team-card`);
+        teamCards[0].querySelector(`h3`).setAttribute(`data-team-member1-name`, ``);
+        teamCards[0].querySelector(`.text-purple-600`).setAttribute(`data-team-member1-role`, ``);
+        teamCards[0].querySelector(`.text-gray-600`).setAttribute(`data-team-member1-desc`, ``);
+        teamCards[1].querySelector(`h3`).setAttribute(`data-team-member2-name`, ``);
+        teamCards[1].querySelector(`.text-purple-600`).setAttribute(`data-team-member2-role`, ``);
+        teamCards[1].querySelector(`.text-gray-600`).setAttribute(`data-team-member2-desc`, ``);
+        teamCards[2].querySelector(`h3`).setAttribute(`data-team-member3-name`, ``);
+        teamCards[2].querySelector(`.text-purple-600`).setAttribute(`data-team-member3-role`, ``);
+        teamCards[2].querySelector(`.text-gray-600`).setAttribute(`data-team-member3-desc`, ``);
+        teamCards[3].querySelector(`h3`).setAttribute(`data-team-member4-name`, ``);
+        teamCards[3].querySelector(`.text-purple-600`).setAttribute(`data-team-member4-role`, ``);
+        teamCards[3].querySelector(`.text-gray-600`).setAttribute(`data-team-member4-desc`, ``);
+
+        const testimonialsSection = document.querySelector(`#testimonials`);
+        testimonialsSection.querySelector(`.section-title`).setAttribute(`data-testimonials-title`, ``);
+        testimonialsSection.querySelector(`.section-subtitle`).setAttribute(`data-testimonials-subtitle`, ``);
+        const testimonialCards = testimonialsSection.querySelectorAll(`.testimonial-card`);
+        testimonialCards[0].querySelector(`.text-gray-700`).setAttribute(`data-review1-text`, ``);
+        testimonialCards[0].querySelector(`.font-bold`).setAttribute(`data-review1-name`, ``);
+        testimonialCards[0].querySelector(`.text-sm`).setAttribute(`data-review1-title`, ``);
+        testimonialCards[1].querySelector(`.text-gray-700`).setAttribute(`data-review2-text`, ``);
+        testimonialCards[1].querySelector(`.font-bold`).setAttribute(`data-review2-name`, ``);
+        testimonialCards[1].querySelector(`.text-sm`).setAttribute(`data-review2-title`, ``);
+        testimonialCards[2].querySelector(`.text-gray-700`).setAttribute(`data-review3-text`, ``);
+        testimonialCards[2].querySelector(`.font-bold`).setAttribute(`data-review3-name`, ``);
+        testimonialCards[2].querySelector(`.text-sm`).setAttribute(`data-review3-title`, ``);
+
+        const contactSection = document.querySelector(`#contact`);
+        contactSection.querySelector(`.section-title`).setAttribute(`data-contact-title`, ``);
+        contactSection.querySelector(`.section-subtitle`).setAttribute(`data-contact-subtitle`, ``);
+        const formLabels = contactSection.querySelectorAll(`.contact-form label`);
+        formLabels[0].setAttribute(`data-form-name`, ``);
+        formLabels[1].setAttribute(`data-form-email`, ``);
+        formLabels[2].setAttribute(`data-form-phone`, ``);
+        formLabels[3].setAttribute(`data-form-message`, ``);
+        const formInputs = contactSection.querySelectorAll(`.contact-form input, .contact-form textarea`);
+        formInputs[0].setAttribute(`data-form-name-placeholder`, ``);
+        formInputs[1].setAttribute(`data-form-email-placeholder`, ``);
+        formInputs[2].setAttribute(`data-form-phone-placeholder`, ``);
+        formInputs[3].setAttribute(`data-form-message-placeholder`, ``);
+        contactSection.querySelector(`button[type="submit"]`).setAttribute(`data-form-submit`, ``);
+
+        const infoCard = contactSection.querySelector(`.contact-info-card`);
+        infoCard.querySelector(`h3`).setAttribute(`data-info-title`, ``);
+        const infoDivs = infoCard.querySelectorAll(`.font-semibold`);
+        infoDivs[0].setAttribute(`data-info-address`, ``);
+        infoDivs[1].setAttribute(`data-info-email`, ``);
+        infoDivs[2].setAttribute(`data-info-phone`, ``);
+        infoDivs[3].setAttribute(`data-info-hours`, ``);
+        infoDivs[4].setAttribute(`data-info-follow`, ``);
+        const infoTexts = infoCard.querySelectorAll(`.opacity-90`);
+        infoTexts[0].setAttribute(`data-info-address-text`, ``);
+        infoTexts[1].setAttribute(`data-info-email-text`, ``);
+        infoTexts[2].setAttribute(`data-info-phone-text`, ``);
+        infoTexts[3].setAttribute(`data-info-hours-text`, ``);
+
+        const footer = document.querySelector(`.footer`);
+        footer.querySelector(`p`).setAttribute(`data-footer-tagline`, ``);
+        const footerHeadings = footer.querySelectorAll(`h4`);
+        footerHeadings[0].setAttribute(`data-footer-quicklinks`, ``);
+        footerHeadings[1].setAttribute(`data-footer-services`, ``);
+        footerHeadings[2].setAttribute(`data-footer-contact`, ``);
+        footer.querySelector(`.text-gray-400.mb-4`).setAttribute(`data-footer-copyright`, ``);
+    </script>
+    <script src="https://cdn.kuse.ai/sdk.prd.js"></script>
+
+</body>
+</html>

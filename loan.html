@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小額借貸 - 小莊國際</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --purple: #667eea;
+            --purple-dark: #764ba2;
+            --purple-light: #a78bfa;
+            --bg: #f8f7ff;
+            --white: #ffffff;
+            --text: #1a1a2e;
+            --gray: #6b7280;
+            --green: #10b981;
+            --red: #ef4444;
+            --gold: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* NAVBAR */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 20px rgba(102,126,234,0.1);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--purple);
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 16px;
+            border: 2px solid var(--purple);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .nav-back:hover { background: var(--purple); color: white; }
+
+        /* HERO */
+        .hero {
+            margin-top: 64px;
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+            padding: 80px 24px 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+            letter-spacing: 1px;
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 60px);
+            font-weight: 900;
+            color: white;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            color: rgba(255,255,255,0.85);
+            font-size: 18px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat .num {
+            font-size: 32px;
+            font-weight: 900;
+            color: white;
+        }
+
+        .hero-stat .label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            margin-top: 2px;
+        }
+
+        /* MAIN CONTENT */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* CALCULATOR SECTION */
+        .calc-section {
+            padding: 60px 20px;
+            background: white;
+        }
+
+        .section-label {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--purple);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(26px, 4vw, 38px);
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .section-sub {
+            text-align: center;
+            color: var(--gray);
+            font-size: 16px;
+            margin-bottom: 48px;
+        }
+
+        .calc-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .calc-wrapper { grid-template-columns: 1fr; }
+        }
+
+        .calc-card {
+            background: var(--bg);
+            border-radius: 20px;
+            padding: 36px;
+            border: 2px solid rgba(102,126,234,0.1);
+        }
+
+        .calc-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            color: var(--text);
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .input-group label span {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--purple);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: linear-gradient(to right, var(--purple) 0%, var(--purple) var(--val, 30%), #e5e7eb var(--val, 30%), #e5e7eb 100%);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--purple);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+            border: 3px solid white;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 6px;
+        }
+
+        /* RESULT CARD */
+        .result-card {
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+            border-radius: 20px;
+            padding: 36px;
+            color: white;
+        }
+
+        .result-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            opacity: 0.9;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .result-item:last-of-type { border-bottom: none; }
+
+        .result-item .r-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .result-item .r-value {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .result-item .r-value.highlight {
+            font-size: 28px;
+            color: #fde68a;
+        }
+
+        .apply-btn {
+            display: block;
+            width: 100%;
+            margin-top: 24px;
+            padding: 16px;
+            background: white;
+            color: var(--purple);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .apply-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        /* LOAN PLANS */
+        .plans-section {
+            padding: 60px 20px;
+            background: var(--bg);
+        }
+
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-top: 0;
+        }
+
+        .plan-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            border: 2px solid rgba(102,126,234,0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(102,126,234,0.15);
+            border-color: var(--purple);
+        }
+
+        .plan-card.featured {
+            border-color: var(--purple);
+            background: linear-gradient(135deg, #f5f3ff, white);
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: 16px;
+            right: -28px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: white;
+            padding: 4px 40px;
+            font-size: 12px;
+            font-weight: 600;
+            transform: rotate(45deg);
+        }
+
+        .plan-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .plan-name {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .plan-range {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .plan-rate {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .plan-rate-label {
+            font-size: 13px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .plan-features li {
+            font-size: 14px;
+            color: var(--gray);
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: var(--green);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .plan-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans TC', sans-serif;
+            text-align: center;
+        }
+
+        .plan-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* STEPS */
+        .steps-section {
+            padding: 60px 20px;
+            background: white;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+        }
+
+        .step-item {
+            text-align: center;
+        }
+
+        .step-num {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            color: white;
+            margin: 0 auto 16px;
+        }
+
+        .step-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .faq-section {
+            padding: 60px 20px;
+            background: var(--bg);
+        }
+
+        .faq-list {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(102,126,234,0.08);
+        }
+
+        .faq-q {
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .faq-q:hover { color: var(--purple); }
+
+        .faq-icon {
+            font-size: 20px;
+            color: var(--purple);
+            transition: transform 0.3s;
+            font-weight: 400;
+        }
+
+        .faq-item.open .faq-icon { transform: rotate(45deg); }
+
+        .faq-a {
+            padding: 0 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            color: var(--gray);
+            line-height: 1.7;
+        }
+
+        .faq-item.open .faq-a {
+            padding: 0 24px 20px;
+            max-height: 200px;
+        }
+
+        /* CTA */
+        .cta-section {
+            padding: 80px 20px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 900;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .cta-section p {
+            color: rgba(255,255,255,0.8);
+            font-size: 17px;
+            margin-bottom: 36px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            padding: 16px 48px;
+            background: white;
+            color: var(--purple);
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            cursor: pointer;
+            border: none;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+        }
+
+        /* FOOTER */
+        footer {
+            background: #1a1a2e;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 28px 20px;
+            font-size: 14px;
+        }
+
+        footer a {
+            color: var(--purple-light);
+            text-decoration: none;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+            background: none;
+            border: none;
+        }
+
+        .modal h3 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-form .form-group {
+            margin-bottom: 18px;
+        }
+
+        .modal-form label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .modal-form input, .modal-form select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid rgba(102,126,234,0.2);
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Noto Sans TC', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .modal-form input:focus, .modal-form select:focus {
+            border-color: var(--purple);
+        }
+
+        .modal-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: opacity 0.3s;
+            margin-top: 8px;
+        }
+
+        .modal-submit:hover { opacity: 0.9; }
+
+        /* Fade in */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: all 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notice {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: #92400e;
+            margin-top: 28px;
+            line-height: 1.6;
+        }
+
+        .notice strong { color: #78350f; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <a href="index.html" class="nav-logo">小莊國際</a>
+    <a href="index.html" class="nav-back">← 返回首頁</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">💰 小額借貸服務</div>
+    <h1>簡單借、輕鬆還</h1>
+    <p>快速審核，最快24小時撥款，資金週轉不煩惱</p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="num">24h</div>
+            <div class="label">最快撥款</div>
+        </div>
+        <div class="hero-stat">
+            <div class="num">1.2%</div>
+            <div class="label">最低月利率</div>
+        </div>
+        <div class="hero-stat">
+            <div class="num">100萬</div>
+            <div class="label">最高借款</div>
+        </div>
+        <div class="hero-stat">
+            <div class="num">98%</div>
+            <div class="label">審核通過率</div>
+        </div>
+    </div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calc-section">
+    <div class="container">
+        <p class="section-label">借款計算機</p>
+        <h2 class="section-title">試算您的還款金額</h2>
+        <p class="section-sub">滑動調整借款金額與期數，即時查看每月還款</p>
+
+        <div class="calc-wrapper fade-in">
+            <!-- 左側：滑桿控制 -->
+            <div class="calc-card">
+                <h3>🔢 設定借款條件</h3>
+
+                <div class="input-group">
+                    <label>借款金額 <span id="amountDisplay">$50,000</span></label>
+                    <input type="range" id="amountRange" min="5000" max="1000000" step="5000" value="50000">
+                    <div class="range-labels"><span>$5,000</span><span>$1,000,000</span></div>
+                </div>
+
+                <div class="input-group">
+                    <label>還款期數 <span id="termDisplay">12 個月</span></label>
+                    <input type="range" id="termRange" min="1" max="60" step="1" value="12">
+                    <div class="range-labels"><span>1 個月</span><span>60 個月</span></div>
+                </div>
+
+                <div class="input-group">
+                    <label>月利率 <span id="rateDisplay">1.5%</span></label>
+                    <input type="range" id="rateRange" min="0.5" max="3.0" step="0.1" value="1.5">
+                    <div class="range-labels"><span>0.5%</span><span>3.0%</span></div>
+                </div>
+
+                <div class="notice">
+                    <strong>⚠️ 注意事項：</strong>實際利率依個人信用評分及借款條件而定，本計算機僅供參考。借款有風險，請量力而為。
+                </div>
+            </div>
+
+            <!-- 右側：結果 -->
+            <div class="result-card">
+                <h3>📊 試算結果</h3>
+
+                <div class="result-item">
+                    <span class="r-label">借款金額</span>
+                    <span class="r-value" id="rLoanAmount">$50,000</span>
+                </div>
+                <div class="result-item">
+                    <span class="r-label">還款期數</span>
+                    <span class="r-value" id="rTerm">12 個月</span>
+                </div>
+                <div class="result-item">
+                    <span class="r-label">月利率</span>
+                    <span class="r-value" id="rRate">1.5%</span>
+                </div>
+                <div class="result-item">
+                    <span class="r-label">每月還款</span>
+                    <span class="r-value highlight" id="rMonthly">$4,570</span>
+                </div>
+                <div class="result-item">
+                    <span class="r-label">總利息費用</span>
+                    <span class="r-value" id="rInterest">$4,845</span>
+                </div>
+                <div class="result-item">
+                    <span class="r-label">總還款金額</span>
+                    <span class="r-value" id="rTotal">$54,845</span>
+                </div>
+
+                <button class="apply-btn" onclick="openModal()">立即申請借款 →</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LOAN PLANS -->
+<section class="plans-section">
+    <div class="container">
+        <p class="section-label fade-in">借款方案</p>
+        <h2 class="section-title fade-in">選擇適合您的方案</h2>
+        <p class="section-sub fade-in">多元方案，靈活選擇</p>
+
+        <div class="plans-grid">
+            <div class="plan-card fade-in">
+                <div class="plan-icon">🌱</div>
+                <div class="plan-name">輕鬆小額</div>
+                <div class="plan-range">$5,000 – $50,000</div>
+                <div class="plan-rate">1.2%</div>
+                <div class="plan-rate-label">月利率起</div>
+                <ul class="plan-features">
+                    <li>最短1個月，最長24個月</li>
+                    <li>線上快速申請</li>
+                    <li>無需抵押品</li>
+                    <li>審核最快1小時</li>
+                </ul>
+                <button class="plan-btn" onclick="openModal('5000', '50000', '1.2')">申請此方案</button>
+            </div>
+
+            <div class="plan-card featured fade-in">
+                <div class="plan-badge">熱門</div>
+                <div class="plan-icon">⭐</div>
+                <div class="plan-name">標準借貸</div>
+                <div class="plan-range">$50,000 – $300,000</div>
+                <div class="plan-rate">1.5%</div>
+                <div class="plan-rate-label">月利率起</div>
+                <ul class="plan-features">
+                    <li>最長36個月</li>
+                    <li>專屬客服協助</li>
+                    <li>彈性提前還款</li>
+                    <li>審核最快3小時</li>
+                </ul>
+                <button class="plan-btn" onclick="openModal('50000', '300000', '1.5')">申請此方案</button>
+            </div>
+
+            <div class="plan-card fade-in">
+                <div class="plan-icon">💎</div>
+                <div class="plan-name">大額專案</div>
+                <div class="plan-range">$300,000 – $1,000,000</div>
+                <div class="plan-rate">1.8%</div>
+                <div class="plan-rate-label">月利率起</div>
+                <ul class="plan-features">
+                    <li>最長60個月</li>
+                    <li>需提供擔保品</li>
+                    <li>個人化還款方案</li>
+                    <li>專案經理服務</li>
+                </ul>
+                <button class="plan-btn" onclick="openModal('300000', '1000000', '1.8')">申請此方案</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="steps-section">
+    <div class="container">
+        <p class="section-label fade-in">申請流程</p>
+        <h2 class="section-title fade-in">四步驟輕鬆借款</h2>
+        <p class="section-sub fade-in">簡單、快速、透明</p>
+
+        <div class="steps-grid">
+            <div class="step-item fade-in">
+                <div class="step-num">1</div>
+                <div class="step-title">填寫申請</div>
+                <div class="step-desc">線上填寫基本資料與借款需求，僅需5分鐘即可完成</div>
+            </div>
+            <div class="step-item fade-in">
+                <div class="step-num">2</div>
+                <div class="step-title">資料審核</div>
+                <div class="step-desc">專業團隊快速審核，依方案不同，審核時間為1至24小時</div>
+            </div>
+            <div class="step-item fade-in">
+                <div class="step-num">3</div>
+                <div class="step-title">確認合約</div>
+                <div class="step-desc">審核通過後，確認借款金額、利率及還款條件</div>
+            </div>
+            <div class="step-item fade-in">
+                <div class="step-num">4</div>
+                <div class="step-title">撥款入帳</div>
+                <div class="step-desc">完成簽約，款項直接撥入您的指定帳戶</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+    <div class="container">
+        <p class="section-label fade-in">常見問題</p>
+        <h2 class="section-title fade-in">您可能想知道的</h2>
+        <p class="section-sub fade-in">找不到答案嗎？歡迎直接聯繫我們</p>
+
+        <div class="faq-list">
+            <div class="faq-item fade-in">
+                <div class="faq-q" onclick="toggleFaq(this)">
+                    申請借款需要哪些文件？
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-a">
+                    一般需提供：本人身分證正反面、近3個月薪資證明或銀行對帳單。大額借款方案可能需要額外的財力證明文件。
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-q" onclick="toggleFaq(this)">
+                    利率是如何計算的？
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-a">
+                    我們採用逐月計息方式，利率依個人信用評分、借款金額及期數而定。實際利率會在審核後由專員告知，並於合約中清楚載明，不會有隱藏費用。
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-q" onclick="toggleFaq(this)">
+                    可以提前還款嗎？有違約金嗎？
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-a">
+                    標準借貸及大額專案方案支援彈性提前還款，部分方案可能收取少許手續費。詳細條款請於申請時與專員確認。
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-q" onclick="toggleFaq(this)">
+                    信用不好的人可以申請嗎？
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-a">
+                    我們接受各種信用狀況的申請，但信用評分較低者可能會影響核准金額或利率。建議誠實填寫資料，我們的專員會盡力協助您找到最合適的方案。
+                </div>
+            </div>
+
+            <div class="faq-item fade-in">
+                <div class="faq-q" onclick="toggleFaq(this)">
+                    多久可以再次申請借款？
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-a">
+                    舊貸款結清後即可重新申請。若舊貸款尚未結清，依個別情況可能可以申請增貸，請聯繫我們的客服人員了解詳情。
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <h2>準備好了嗎？</h2>
+    <p>立即申請，專員將在最短時間內與您聯繫</p>
+    <button class="cta-btn" onclick="openModal()">免費諮詢 & 立即申請</button>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p>© 2025 小莊國際版權所有 | <a href="index.html">回首頁</a></p>
+    <p style="margin-top: 8px; font-size: 12px;">借款前請詳閱合約，年利率依法不得超過16%。本公司保留審核權利。</p>
+</footer>
+
+<!-- APPLY MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <h3>申請借款</h3>
+        <form class="modal-form" onsubmit="submitForm(event)">
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" placeholder="請輸入您的姓名" required>
+            </div>
+            <div class="form-group">
+                <label>聯絡電話</label>
+                <input type="tel" placeholder="09XX-XXX-XXX" required>
+            </div>
+            <div class="form-group">
+                <label>需求金額</label>
+                <select id="modalAmount">
+                    <option>$5,000 – $50,000（輕鬆小額）</option>
+                    <option>$50,000 – $300,000（標準借貸）</option>
+                    <option>$300,000 – $1,000,000（大額專案）</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>希望還款期數</label>
+                <select>
+                    <option>6 個月</option>
+                    <option>12 個月</option>
+                    <option>24 個月</option>
+                    <option>36 個月</option>
+                    <option>48 個月</option>
+                    <option>60 個月</option>
+                </select>
+            </div>
+            <button type="submit" class="modal-submit">送出申請</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ── 計算機邏輯 ──
+    const amountRange = document.getElementById('amountRange');
+    const termRange = document.getElementById('termRange');
+    const rateRange = document.getElementById('rateRange');
+
+    function formatMoney(n) {
+        return '$' + Math.round(n).toLocaleString('zh-TW');
+    }
+
+    function updateSliderBg(el) {
+        const min = +el.min, max = +el.max, val = +el.value;
+        const pct = ((val - min) / (max - min) * 100).toFixed(1);
+        el.style.setProperty('--val', pct + '%');
+    }
+
+    function calcLoan() {
+        const P = +amountRange.value;
+        const n = +termRange.value;
+        const r = +rateRange.value / 100;
+
+        let monthly;
+        if (r === 0) {
+            monthly = P / n;
+        } else {
+            monthly = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        }
+
+        const total = monthly * n;
+        const interest = total - P;
+
+        document.getElementById('amountDisplay').textContent = formatMoney(P);
+        document.getElementById('termDisplay').textContent = n + ' 個月';
+        document.getElementById('rateDisplay').textContent = (+rateRange.value).toFixed(1) + '%';
+
+        document.getElementById('rLoanAmount').textContent = formatMoney(P);
+        document.getElementById('rTerm').textContent = n + ' 個月';
+        document.getElementById('rRate').textContent = (+rateRange.value).toFixed(1) + '%';
+        document.getElementById('rMonthly').textContent = formatMoney(monthly);
+        document.getElementById('rInterest').textContent = formatMoney(interest);
+        document.getElementById('rTotal').textContent = formatMoney(total);
+
+        [amountRange, termRange, rateRange].forEach(updateSliderBg);
+    }
+
+    [amountRange, termRange, rateRange].forEach(el => {
+        el.addEventListener('input', calcLoan);
+    });
+
+    calcLoan();
+
+    // ── FAQ ──
+    function toggleFaq(el) {
+        const item = el.parentElement;
+        item.classList.toggle('open');
+    }
+
+    // ── Modal ──
+    function openModal(minAmt, maxAmt, rate) {
+        document.getElementById('modalOverlay').classList.add('active');
+        if (minAmt) {
+            const sel = document.getElementById('modalAmount');
+            const map = { '5000': 0, '50000': 1, '300000': 2 };
+            if (map[minAmt] !== undefined) sel.selectedIndex = map[minAmt];
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function closeModalOutside(e) {
+        if (e.target === document.getElementById('modalOverlay')) closeModal();
+    }
+
+    function submitForm(e) {
+        e.preventDefault();
+        closeModal();
+        alert('感謝您的申請！\n我們的專員將在24小時內與您聯繫。');
+    }
+
+    // ── Fade in on scroll ──
+    const fadeEls = document.querySelectorAll('.fade-in');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    fadeEls.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

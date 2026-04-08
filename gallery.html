@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高端派遣 - 小莊國際</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --purple-start: #667eea;
+            --purple-end: #764ba2;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        body { font-family: 'Noto Sans TC', 'Poppins', sans-serif; background: #f8f7ff; color: #202020; min-height: 100vh; }
+
+        /* Navbar */
+        .navbar {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            backdrop-filter: blur(12px); background: rgba(255,255,255,0.92);
+            box-shadow: 0 2px 20px rgba(102,126,234,0.12);
+            height: 64px; display: flex; align-items: center;
+        }
+        .navbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; display: flex; align-items: center; gap: 16px; }
+        .back-btn { display: flex; align-items: center; gap: 8px; color: var(--purple-start); text-decoration: none; font-weight: 600; font-size: 15px; transition: opacity 0.2s; }
+        .back-btn:hover { opacity: 0.7; }
+        .back-btn svg { width: 20px; height: 20px; }
+        .navbar-title { font-size: 20px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        /* Hero */
+        .hero-banner { margin-top: 64px; background: var(--gradient); padding: 56px 24px 48px; text-align: center; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 40px 40px; }
+        .hero-banner h1 { position: relative; font-size: clamp(28px,5vw,48px); font-weight: 700; color: white; margin-bottom: 12px; }
+        .hero-banner p { position: relative; color: rgba(255,255,255,0.85); font-size: 16px; }
+
+        /* Profile */
+        .profile-strip { max-width: 900px; margin: 0 auto; padding: 32px 24px 16px; display: flex; align-items: center; gap: 24px; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(102,126,234,0.4); }
+        .profile-info h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .profile-info p { color: #666; font-size: 14px; }
+        .profile-stats { display: flex; gap: 24px; margin-left: auto; }
+        .stat { text-align: center; }
+        .stat-num { font-size: 22px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+        .divider { max-width: 900px; margin: 0 auto 24px; border-bottom: 2px solid rgba(102,126,234,0.15); }
+
+        /* Upload */
+        .upload-hint { max-width: 900px; margin: 24px auto 0; display: flex; align-items: center; gap: 12px; background: rgba(102,126,234,0.08); border: 2px dashed rgba(102,126,234,0.3); border-radius: 12px; padding: 16px 20px; color: #667eea; font-size: 14px; }
+        .upload-hint-icon { font-size: 24px; flex-shrink: 0; }
+        .upload-btn { margin-left: auto; background: var(--gradient); color: white; border: none; border-radius: 8px; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: opacity 0.2s, transform 0.2s; flex-shrink: 0; }
+        .upload-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        #fileInput { display: none; }
+
+        /* Grid */
+        .gallery-container { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+        .photo-item { position: relative; aspect-ratio: 1/1; overflow: hidden; cursor: pointer; background: #e8e4f8; }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; transition: transform 0.4s ease; }
+        .photo-placeholder .ph-icon { font-size: 36px; opacity: 0.7; }
+        .photo-placeholder .ph-label { font-size: 13px; color: rgba(255,255,255,0.8); font-weight: 500; }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; display: block; }
+        .photo-overlay { position: absolute; inset: 0; background: rgba(102,126,234,0.55); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+        .photo-overlay-inner { color: white; font-size: 15px; font-weight: 600; }
+        .photo-item:hover .photo-overlay { opacity: 1; }
+        .photo-item:hover .photo-placeholder, .photo-item:hover img { transform: scale(1.05); }
+
+        /* Loading overlay */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(8,4,18,0.7); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+        .loading-overlay.hidden { display: none; }
+        .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 15px; font-weight: 500; }
+
+        /* Lightbox */
+        .lightbox { display: none; position: fixed; inset: 0; background: rgba(8,4,18,0.95); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+        .lightbox.open { display: flex; }
+        .lightbox-inner { display: flex; max-width: 1080px; width: 100%; max-height: 90vh; border-radius: 16px; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.7); animation: lb-in 0.25s ease; }
+        @keyframes lb-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .lb-image-panel { flex: 0 0 52%; background: #0d0818; display: flex; align-items: center; justify-content: center; position: relative; min-height: 420px; }
+        .lb-image-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .lb-placeholder { width: 100%; height: 100%; min-height: 420px; display: flex; align-items: center; justify-content: center; font-size: 90px; }
+
+        /* Info panel */
+        .lb-info-panel { flex: 0 0 48%; background: white; display: flex; flex-direction: column; overflow-y: auto; max-height: 90vh; }
+        .lb-info-header { background: var(--gradient); padding: 20px 24px 16px; color: white; position: relative; flex-shrink: 0; }
+        .lb-info-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .lb-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600; margin-top: 8px; }
+        /* 預設隱藏管理員功能，解鎖後才顯示 */
+        .lb-edit-toggle { display: none; position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; color: white; font-size: 12px; font-weight: 600; padding: 5px 10px; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: background 0.2s; }
+        .admin-unlocked .lb-edit-toggle { display: block; }
+        .lb-edit-toggle:hover { background: rgba(255,255,255,0.35); }
+        /* 上傳區塊預設隱藏 */
+        #uploadArea { display: none; }
+        .admin-unlocked-page #uploadArea { display: flex; }
+        .lb-info-body { padding: 16px 24px; flex: 1; }
+        .lb-section { margin-bottom: 18px; }
+        .lb-section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: #aaa; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #f0eeff; }
+        .lb-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+        .lb-row-icon { font-size: 15px; flex-shrink: 0; }
+        .lb-row-label { color: #999; min-width: 52px; flex-shrink: 0; font-size: 12px; }
+        .lb-editable { color: #202020; font-weight: 500; flex: 1; border: none; outline: none; background: transparent; font-family: 'Noto Sans TC', sans-serif; font-size: 14px; padding: 2px 6px; border-radius: 6px; transition: background 0.2s; }
+        .edit-mode .lb-editable { background: #f0eeff; cursor: text; }
+        .lb-editable:focus { background: #e8e2ff !important; }
+        .lb-measurements { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 6px; }
+        .lb-meas-box { background: #f8f7ff; border-radius: 10px; padding: 10px 8px; text-align: center; border: 1.5px solid rgba(102,126,234,0.12); }
+        .lb-meas-input { font-size: 18px; font-weight: 700; color: var(--purple-start); border: none; outline: none; background: transparent; text-align: center; width: 100%; font-family: 'Noto Sans TC', sans-serif; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
+        .edit-mode .lb-meas-input { background: #ede9ff; cursor: text; }
+        .lb-meas-input:focus { background: #ddd7ff !important; }
+        .lb-meas-label { font-size: 11px; color: #aaa; margin-top: 2px; }
+        .lb-price-box { background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08)); border: 2px solid rgba(102,126,234,0.2); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+        .lb-price-label { font-size: 13px; color: #666; }
+        .lb-price-input { font-size: 20px; font-weight: 700; color: #667eea; border: none; outline: none; text-align: right; width: 140px; font-family: 'Noto Sans TC', sans-serif; background: transparent; }
+        .lb-service-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .lb-tag { background: rgba(102,126,234,0.1); color: var(--purple-start); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; }
+        .lb-tag-del { cursor: pointer; margin-left: 4px; opacity: 0.5; display: none; }
+        .edit-mode .lb-tag-del { display: inline; }
+        .lb-tag-del:hover { opacity: 1; }
+        .lb-add-tag { display: none; align-items: center; gap: 4px; }
+        .edit-mode .lb-add-tag { display: flex; }
+        .lb-tag-input { border: 1.5px solid rgba(102,126,234,0.3); border-radius: 20px; padding: 3px 10px; font-size: 12px; outline: none; width: 90px; font-family: 'Noto Sans TC', sans-serif; color: var(--purple-start); }
+        .lb-tag-add-btn { background: rgba(102,126,234,0.15); border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; color: var(--purple-start); display: flex; align-items: center; justify-content: center; }
+        .lb-intro-input { font-size: 13px; opacity: 0.9; background: transparent; border: none; outline: none; font-family: 'Noto Sans TC', sans-serif; color: white; width: 100%; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
+        .lb-name-input { font-size: 20px; font-weight: 700; background: transparent; border: none; outline: none; font-family: 'Noto Sans TC', sans-serif; color: white; width: 100%; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; }
+        .edit-mode .lb-intro-input, .edit-mode .lb-name-input { background: rgba(255,255,255,0.15); cursor: text; }
+        .lb-save-notice { font-size: 12px; color: #667eea; text-align: center; padding: 6px; display: none; font-weight: 500; }
+        .lb-save-notice.show { display: block; }
+        .lb-contact-btn { display: block; width: 100%; background: var(--gradient); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; text-align: center; text-decoration: none; transition: opacity 0.2s, transform 0.2s; }
+        .lb-contact-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+        .lb-info-footer { padding: 0 24px 14px; flex-shrink: 0; }
+        .lightbox-close { position: absolute; top: 14px; right: 16px; color: rgba(255,255,255,0.75); font-size: 26px; cursor: pointer; z-index: 10; line-height: 1; transition: color 0.2s; }
+        .lightbox-close:hover { color: white; }
+        .lb-nav-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px; border-top: 1px solid #f0eeff; flex-shrink: 0; }
+        .lb-nav-btn { background: rgba(102,126,234,0.1); border: none; border-radius: 8px; color: var(--purple-start); font-size: 22px; width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .lb-nav-btn:hover { background: rgba(102,126,234,0.2); }
+        .lb-counter { font-size: 13px; color: #aaa; }
+
+        /* Admin password modal */
+        .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(8,4,18,0.8); z-index: 350; align-items: center; justify-content: center; padding: 20px; }
+        .admin-overlay.open { display: flex; }
+        .admin-box { background: white; border-radius: 16px; padding: 32px 28px; max-width: 340px; width: 100%; text-align: center; animation: lb-in 0.2s ease; }
+        .admin-icon { font-size: 40px; margin-bottom: 12px; }
+        .admin-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .admin-sub { font-size: 13px; color: #888; margin-bottom: 20px; }
+        .admin-input { width: 100%; border: 1.5px solid rgba(102,126,234,0.3); border-radius: 10px; padding: 11px 14px; font-size: 18px; text-align: center; letter-spacing: 6px; outline: none; font-family: 'Noto Sans TC', sans-serif; transition: border-color 0.2s; background: #fafaff; }
+        .admin-input:focus { border-color: var(--purple-start); background: white; }
+        .admin-input.error { border-color: #e53e3e; animation: shake 0.3s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+        .admin-error { font-size: 12px; color: #e53e3e; margin-top: 8px; min-height: 18px; }
+        .admin-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .admin-cancel { flex: 1; background: #f0eeff; color: var(--purple-start); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+        .admin-confirm { flex: 2; background: var(--gradient); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+        /* 管理員解鎖後顯示退出按鈕 */
+        .admin-logout-btn { display: none; position: absolute; top: 14px; left: 14px; background: rgba(255,255,255,0.15); border: none; border-radius: 8px; color: white; font-size: 11px; font-weight: 600; padding: 4px 9px; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+        .admin-unlocked .admin-logout-btn { display: block; }
+
+        /* Delete button */
+        .lb-delete-btn { display: none; width: 100%; background: transparent; color: #e53e3e; border: 1.5px solid #e53e3e; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; margin-top: 8px; transition: background 0.2s, color 0.2s; }
+        .admin-unlocked .lb-delete-btn { display: block; }
+        .lb-delete-btn:hover { background: #e53e3e; color: white; }
+
+        /* Confirm delete modal */
+        .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(8,4,18,0.8); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+        .confirm-overlay.open { display: flex; }
+        .confirm-box { background: white; border-radius: 16px; padding: 28px 24px; max-width: 360px; width: 100%; text-align: center; animation: lb-in 0.2s ease; }
+        .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+        .confirm-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #202020; }
+        .confirm-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-cancel { flex: 1; background: #f0eeff; color: var(--purple-start); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+        .confirm-delete { flex: 1; background: #e53e3e; color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: opacity 0.2s; }
+        .confirm-delete:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Contact Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(8,4,18,0.7); z-index: 250; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: white; border-radius: 16px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 32px 80px rgba(0,0,0,0.5); animation: lb-in 0.25s ease; }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .modal-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+        .modal-field { margin-bottom: 16px; }
+        .modal-field label { font-size: 12px; font-weight: 600; color: #666; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .modal-field input, .modal-field textarea { width: 100%; border: 1.5px solid rgba(102,126,234,0.2); border-radius: 10px; padding: 10px 14px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; outline: none; transition: border-color 0.2s; background: #fafaff; }
+        .modal-field input:focus, .modal-field textarea:focus { border-color: var(--purple-start); background: white; }
+        .modal-field textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .modal-cancel { flex: 1; background: #f0eeff; color: var(--purple-start); border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+        .modal-submit { flex: 2; background: var(--gradient); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; transition: opacity 0.2s; }
+        .modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .modal-success { text-align: center; padding: 16px 0; }
+        .modal-success .success-icon { font-size: 48px; margin-bottom: 12px; }
+        .modal-success p { color: #555; font-size: 14px; }
+
+        /* CTA */
+        .cta-bar { position: fixed; bottom: 0; width: 100%; background: white; padding: 12px 24px; box-shadow: 0 -4px 20px rgba(102,126,234,0.15); display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 50; }
+        .cta-text { font-size: 14px; color: #555; }
+        .cta-text strong { color: #202020; }
+        .cta-btn { background: var(--gradient); color: white; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; white-space: nowrap; transition: opacity 0.2s, transform 0.2s; box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+        .cta-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+        @media (max-width: 700px) {
+            .lightbox-inner { flex-direction: column; max-height: 95vh; }
+            .lb-image-panel { flex: 0 0 220px; min-height: 220px; }
+            .lb-info-panel { flex: 1; max-height: none; }
+            .profile-stats { gap: 14px; }
+            .gallery-grid { gap: 3px; }
+            .cta-text { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">載入中...</div>
+</div>
+
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a href="index.html" class="back-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            返回
+        </a>
+        <span class="navbar-title">高端派遣 ✨</span>
+    </div>
+</nav>
+
+<div class="hero-banner">
+    <h1>高端派遣服務</h1>
+    <p>你的夜，讓我們來幫你升級 &nbsp;·&nbsp; 私訊了解更多</p>
+</div>
+
+<div class="profile-strip">
+    <div class="profile-avatar">💎</div>
+    <div class="profile-info">
+        <h2>小莊國際</h2>
+        <p>頂級服務・精選陣容・品質保證</p>
+    </div>
+    <div class="profile-stats">
+        <div class="stat"><div class="stat-num" id="photoCount">0</div><div class="stat-label">作品</div></div>
+        <div class="stat"><div class="stat-num">98%</div><div class="stat-label">滿意度</div></div>
+        <div class="stat"><div class="stat-num">500+</div><div class="stat-label">服務數</div></div>
+    </div>
+</div>
+<div class="divider"></div>
+
+<div id="uploadArea" class="upload-hint" style="max-width:900px;margin:24px auto 0;display:flex;align-items:center;gap:12px;background:rgba(102,126,234,0.08);border:2px dashed rgba(102,126,234,0.3);border-radius:12px;padding:16px 20px;color:#667eea;font-size:14px;">
+    <span class="upload-hint-icon">🖼️</span>
+    <span>點擊「上傳照片」可新增圖片，支援 JPG / PNG｜照片與資料儲存至雲端，所有人皆可看見</span>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">＋ 上傳照片</button>
+    <input type="file" id="fileInput" multiple accept="image/*" onchange="handleUpload(event)">
+</div>
+
+<div class="gallery-container">
+    <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <div class="lightbox-inner" id="lightboxInner">
+        <div class="lb-image-panel" id="lbImagePanel">
+            <span class="lightbox-close" onclick="closeLightbox()">✕</span>
+        </div>
+        <div class="lb-info-panel" id="lbInfoPanel">
+            <div class="lb-info-header">
+                <input class="lb-name-input" id="lbName" type="text" placeholder="姓名／暱稱" readonly>
+                <button class="admin-logout-btn" onclick="adminLogout()">🔓 登出</button>
+                <button class="lb-edit-toggle" id="editToggle" onclick="toggleEdit()">✏️ 編輯</button>
+                <input class="lb-intro-input" id="lbIntro" type="text" placeholder="簡介..." readonly>
+                <div class="lb-badge">✨ 高端派遣</div>
+            </div>
+            <div class="lb-info-body">
+                <div class="lb-section">
+                    <div class="lb-section-title">基本資料</div>
+                    <div class="lb-row"><span class="lb-row-icon">🎂</span><span class="lb-row-label">年齡</span><input class="lb-editable" id="lbAge" type="text" placeholder="例：22歲" readonly></div>
+                    <div class="lb-row"><span class="lb-row-icon">📏</span><span class="lb-row-label">身高</span><input class="lb-editable" id="lbHeight" type="text" placeholder="例：163 cm" readonly></div>
+                    <div class="lb-row"><span class="lb-row-icon">⚖️</span><span class="lb-row-label">體重</span><input class="lb-editable" id="lbWeight" type="text" placeholder="例：48 kg" readonly></div>
+                </div>
+                <div class="lb-section">
+                    <div class="lb-section-title">三圍</div>
+                    <div class="lb-measurements">
+                        <div class="lb-meas-box"><input class="lb-meas-input" id="lbBust" type="text" placeholder="—" readonly><div class="lb-meas-label">胸圍 B</div></div>
+                        <div class="lb-meas-box"><input class="lb-meas-input" id="lbWaist" type="text" placeholder="—" readonly><div class="lb-meas-label">腰圍 W</div></div>
+                        <div class="lb-meas-box"><input class="lb-meas-input" id="lbHip" type="text" placeholder="—" readonly><div class="lb-meas-label">臀圍 H</div></div>
+                    </div>
+                </div>
+                <div class="lb-section">
+                    <div class="lb-section-title">服務項目</div>
+                    <div class="lb-service-tags" id="lbServices"></div>
+                    <div class="lb-add-tag" style="margin-top:8px;">
+                        <input class="lb-tag-input" id="newTagInput" placeholder="新增項目" onkeydown="if(event.key==='Enter')addTag()">
+                        <button class="lb-tag-add-btn" onclick="addTag()">＋</button>
+                    </div>
+                </div>
+                <div class="lb-section">
+                    <div class="lb-section-title">參考價格</div>
+                    <div class="lb-price-box">
+                        <span class="lb-price-label">起價 / 次</span>
+                        <input class="lb-editable lb-price-input" id="lbPrice" type="text" placeholder="$0,000" readonly>
+                    </div>
+                </div>
+                <div class="lb-section">
+                    <div class="lb-section-title">聯絡方式</div>
+                    <div class="lb-row"><span class="lb-row-icon">📱</span><span class="lb-row-label">LINE</span><input class="lb-editable" id="lbLine" type="text" placeholder="@line_id" readonly></div>
+                    <div class="lb-row"><span class="lb-row-icon">📞</span><span class="lb-row-label">電話</span><input class="lb-editable" id="lbPhone" type="text" placeholder="09XX-XXX-XXX" readonly></div>
+                </div>
+            </div>
+            <div class="lb-save-notice" id="saveNotice">✅ 資料已儲存至雲端</div>
+            <div class="lb-info-footer">
+                <button class="lb-contact-btn" onclick="openContactModal()">📩 立即預約諮詢</button>
+                <!-- 管理員功能區：未登入顯示登入鈕，登入後顯示編輯＋刪除＋登出 -->
+                <div id="adminGuestArea" style="margin-top:8px;text-align:center;">
+                    <button onclick="openAdminModal()" style="background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 8px;border-radius:6px;transition:color 0.2s;" onmouseover="this.style.color='#667eea'" onmouseout="this.style.color='#bbb'">🔐 管理員登入</button>
+                </div>
+                <div id="adminActionsArea" style="display:none;margin-top:8px;display:none;">
+                    <button class="lb-edit-toggle-btn" id="editToggle" onclick="toggleEdit()" style="display:block;width:100%;background:rgba(102,126,234,0.1);color:#667eea;border:1.5px solid rgba(102,126,234,0.3);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:6px;transition:background 0.2s;">✏️ 編輯資料</button>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="confirmDelete()" style="flex:1;background:transparent;color:#e53e3e;border:1.5px solid #e53e3e;border-radius:10px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:background 0.2s;" onmouseover="this.style.background='#e53e3e';this.style.color='white'" onmouseout="this.style.background='transparent';this.style.color='#e53e3e'">🗑️ 刪除照片</button>
+                        <button onclick="adminLogout()" style="flex:1;background:transparent;color:#999;border:1.5px solid #ddd;border-radius:10px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">🔓 登出</button>
+                    </div>
+                </div>
+            </div>
+            <div class="lb-nav-row">
+                <button class="lb-nav-btn" onclick="navLightbox(-1)">‹</button>
+                <span class="lb-counter" id="lbCounter">1 / 0</span>
+                <button class="lb-nav-btn" onclick="navLightbox(1)">›</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Password Modal -->
+<div class="admin-overlay" id="adminModal">
+    <div class="admin-box">
+        <div class="admin-icon">🔐</div>
+        <div class="admin-title">管理員登入</div>
+        <div class="admin-sub">請輸入管理員密碼以解鎖編輯與刪除功能</div>
+        <input class="admin-input" id="adminInput" type="password" placeholder="••••" maxlength="20"
+            onkeydown="if(event.key==='Enter')checkAdminPassword()">
+        <div class="admin-error" id="adminError"></div>
+        <div class="admin-actions">
+            <button class="admin-cancel" onclick="closeAdminModal()">取消</button>
+            <button class="admin-confirm" onclick="checkAdminPassword()">確認解鎖</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-box">
+        <div class="confirm-icon">🗑️</div>
+        <div class="confirm-title">確定要刪除嗎？</div>
+        <div class="confirm-sub">此照片與所有資料將永久刪除，無法復原。</div>
+        <div class="confirm-actions">
+            <button class="confirm-cancel" onclick="closeConfirm()">取消</button>
+            <button class="confirm-delete" id="confirmDeleteBtn" onclick="deleteCurrentItem()">確定刪除</button>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Modal -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal-box">
+        <div id="modalContent">
+            <div class="modal-title">📩 預約諮詢</div>
+            <div class="modal-sub">填寫以下資料，我們會盡快與你聯絡</div>
+            <div class="modal-field">
+                <label>你的姓名</label>
+                <input type="text" id="contactName" placeholder="請輸入姓名">
+            </div>
+            <div class="modal-field">
+                <label>LINE ID / 電話</label>
+                <input type="text" id="contactLine" placeholder="方便聯絡的方式">
+            </div>
+            <div class="modal-field">
+                <label>感興趣的對象</label>
+                <input type="text" id="contactTarget" placeholder="例：No.3 小美">
+            </div>
+            <div class="modal-field">
+                <label>備註 / 需求</label>
+                <textarea id="contactNote" placeholder="其他需求或時間..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-cancel" onclick="closeContactModal()">取消</button>
+                <button class="modal-submit" id="submitBtn" onclick="submitContact()">送出預約 🚀</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cta-bar">
+    <div class="cta-text"><strong>感興趣？</strong> 立即私訊我們了解詳情</div>
+    <button class="cta-btn" onclick="openContactModal()">📩 立即聯絡</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// Supabase 設定
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://wzsoctxmizwxrmwezlwq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_F5v9JvdXqI3EM8OWT2ydFg_tAI7yRz0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════
+// EmailJS 設定
+// ══════════════════════════════════════════
+emailjs.init('GNoBvvoNQ6XugKayV');
+const EMAILJS_SERVICE  = 'kevin0207';
+const EMAILJS_TEMPLATE = 'template_jv2v3xr';
+
+// ══════════════════════════════════════════
+// Constants
+// ══════════════════════════════════════════
+const BUCKET = 'gallery-images';
+const TABLE  = 'gallery_items';
+const EMOJIS = ['💃','🌸','✨','💎','🌙','🔥','💫','🌺','👑','🌟','🎀','💜'];
+const GRADS  = [
+    'linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#a78bfa,#667eea)',
+    'linear-gradient(135deg,#764ba2,#c084fc)','linear-gradient(135deg,#7c3aed,#667eea)',
+    'linear-gradient(135deg,#9333ea,#a78bfa)','linear-gradient(135deg,#6d28d9,#8b5cf6)',
+    'linear-gradient(135deg,#667eea,#a78bfa)','linear-gradient(135deg,#8b5cf6,#764ba2)',
+    'linear-gradient(135deg,#c084fc,#667eea)','linear-gradient(135deg,#764ba2,#7c3aed)',
+    'linear-gradient(135deg,#667eea,#6d28d9)','linear-gradient(135deg,#a78bfa,#9333ea)',
+];
+
+let items   = [];
+let current = 0;
+let editMode = false;
+
+// ══════════════════════════════════════════
+// Loading helpers
+// ══════════════════════════════════════════
+function showLoading(msg = '處理中...') {
+    document.getElementById('loadingText').textContent = msg;
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════
+// 初始化：建立 Supabase 資料表（若不存在）
+// ══════════════════════════════════════════
+async function init() {
+    showLoading('載入圖庫...');
+    await loadFromSupabase();
+    hideLoading();
+}
+
+// ══════════════════════════════════════════
+// 從 Supabase 讀取所有資料
+// ══════════════════════════════════════════
+async function loadFromSupabase() {
+    try {
+        const { data, error } = await sb
+            .from(TABLE)
+            .select('*')
+            .order('sort_order', { ascending: true });
+
+        if (error) {
+            // 資料表可能不存在，嘗試建立
+            await createTable();
+            items = [];
+        } else {
+            items = data || [];
+        }
+    } catch(e) {
+        items = [];
+    }
+    document.getElementById('photoCount').textContent = items.length;
+    renderGrid();
+}
+
+// ══════════════════════════════════════════
+// 建立資料表（第一次使用時）
+// ══════════════════════════════════════════
+async function createTable() {
+    // 用 rpc 或直接 insert 來觸發建立
+    // Supabase 免費版需在 Dashboard 手動建表，這裡顯示提示
+    console.log('請在 Supabase Dashboard 建立資料表，詳見說明');
+}
+
+// ══════════════════════════════════════════
+// 上傳圖片
+// ══════════════════════════════════════════
+async function handleUpload(event) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    showLoading('上傳圖片中...');
+    for (const file of files) {
+        await uploadOneFile(file);
+    }
+    await loadFromSupabase();
+    hideLoading();
+    event.target.value = '';
+}
+
+async function uploadOneFile(file) {
+    try {
+        // 1. 上傳圖片到 Storage
+        const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._]/g, '_')}`;
+        const { data: storageData, error: storageErr } = await sb.storage
+            .from(BUCKET)
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+        if (storageErr) throw storageErr;
+
+        // 2. 取得公開 URL
+        const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(fileName);
+        const publicUrl = urlData.publicUrl;
+
+        // 3. 新增一筆記錄到資料表
+        const newItem = {
+            image_url: publicUrl,
+            storage_path: fileName,
+            sort_order: Date.now(),
+            name: '', intro: '', age: '', height: '', weight: '',
+            bust: '', waist: '', hip: '', price: '', line: '', phone: '',
+            services: []
+        };
+
+        const { error: dbErr } = await sb.from(TABLE).insert([newItem]);
+        if (dbErr) throw dbErr;
+
+    } catch(e) {
+        alert('上傳失敗：' + (e.message || e));
+    }
+}
+
+// ══════════════════════════════════════════
+// 渲染格子
+// ══════════════════════════════════════════
+function renderGrid() {
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+    document.getElementById('photoCount').textContent = items.length;
+
+    items.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'photo-item';
+        div.onclick = () => openLightbox(i);
+
+        if (item.image_url) {
+            const img = document.createElement('img');
+            img.src = item.image_url;
+            img.alt = item.name || `照片 ${i+1}`;
+            div.appendChild(img);
+        } else {
+            const ph = document.createElement('div');
+            ph.className = 'photo-placeholder';
+            ph.style.background = GRADS[i % GRADS.length];
+            ph.innerHTML = `<span class="ph-icon">${EMOJIS[i % EMOJIS.length]}</span>
+                            <span class="ph-label">${item.name || 'No.'+(i+1)}</span>`;
+            div.appendChild(ph);
+        }
+
+        const ov = document.createElement('div');
+        ov.className = 'photo-overlay';
+        ov.innerHTML = `<div class="photo-overlay-inner">👁 查看資訊</div>`;
+        div.appendChild(ov);
+        grid.appendChild(div);
+    });
+}
+
+// ══════════════════════════════════════════
+// Lightbox
+// ══════════════════════════════════════════
+function openLightbox(index) {
+    current = index;
+    editMode = false;
+    fillLightbox();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    if (isAdmin) adminLogout();
+    isAdmin = false;
+    editMode = false;
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function navLightbox(dir) {
+    if (editMode) return;
+    current = (current + dir + items.length) % items.length;
+    fillLightbox();
+}
+
+function fillLightbox() {
+    const item = items[current];
+    if (!item) return;
+    const panel = document.getElementById('lbImagePanel');
+
+    panel.innerHTML = `<span class="lightbox-close" onclick="closeLightbox()">✕</span>`;
+    if (item.image_url) {
+        const img = document.createElement('img');
+        img.src = item.image_url;
+        panel.appendChild(img);
+    } else {
+        const ph = document.createElement('div');
+        ph.className = 'lb-placeholder';
+        ph.style.background = GRADS[current % GRADS.length];
+        ph.innerHTML = `<span>${EMOJIS[current % EMOJIS.length]}</span>`;
+        panel.appendChild(ph);
+    }
+
+    setField('lbName',   item.name);
+    setField('lbIntro',  item.intro);
+    setField('lbAge',    item.age);
+    setField('lbHeight', item.height);
+    setField('lbWeight', item.weight);
+    setField('lbBust',   item.bust);
+    setField('lbWaist',  item.waist);
+    setField('lbHip',    item.hip);
+    setField('lbPrice',  item.price);
+    setField('lbLine',   item.line);
+    setField('lbPhone',  item.phone);
+
+    renderTags(item.services || []);
+    document.getElementById('lbCounter').textContent = `${current+1} / ${items.length}`;
+    document.getElementById('saveNotice').classList.remove('show');
+    applyEditMode(false);
+}
+
+function setField(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+}
+
+function renderTags(services) {
+    const container = document.getElementById('lbServices');
+    container.innerHTML = (services || []).map((s, i) =>
+        `<span class="lb-tag">${s}<span class="lb-tag-del" onclick="removeTag(${i})">✕</span></span>`
+    ).join('');
+}
+
+// ══════════════════════════════════════════
+// 管理員密碼驗證
+// ══════════════════════════════════════════
+const ADMIN_PASSWORD = '0207';
+let isAdmin = false;
+
+function openAdminModal() {
+    document.getElementById('adminInput').value = '';
+    document.getElementById('adminError').textContent = '';
+    document.getElementById('adminInput').classList.remove('error');
+    document.getElementById('adminModal').classList.add('open');
+    setTimeout(() => document.getElementById('adminInput').focus(), 100);
+}
+
+function closeAdminModal() {
+    document.getElementById('adminModal').classList.remove('open');
+}
+
+function checkAdminPassword() {
+    const val = document.getElementById('adminInput').value;
+    if (val === ADMIN_PASSWORD) {
+        isAdmin = true;
+        closeAdminModal();
+        // 切換顯示管理員功能區
+        document.getElementById('adminGuestArea').style.display = 'none';
+        document.getElementById('adminActionsArea').style.display = 'block';
+        // 解鎖上傳區
+        document.getElementById('uploadArea').style.display = 'flex';
+        applyEditMode(false);
+    } else {
+        const input = document.getElementById('adminInput');
+        const err   = document.getElementById('adminError');
+        input.classList.add('error');
+        err.textContent = '密碼錯誤，請再試一次';
+        input.value = '';
+        setTimeout(() => input.classList.remove('error'), 400);
+    }
+}
+
+function adminLogout() {
+    isAdmin = false;
+    applyEditMode(false);
+    document.getElementById('adminGuestArea').style.display = 'block';
+    document.getElementById('adminActionsArea').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+// 編輯模式
+// ══════════════════════════════════════════
+function toggleEdit() {
+    if (!isAdmin) return;
+    if (editMode) {
+        saveCurrentData();
+    } else {
+        applyEditMode(true);
+    }
+}
+
+function applyEditMode(on) {
+    editMode = on;
+    const panel  = document.getElementById('lbInfoPanel');
+    const btn    = document.getElementById('editToggle');
+    const inputs = panel.querySelectorAll('input.lb-editable, input.lb-meas-input, input.lb-name-input, input.lb-intro-input');
+    if (on) {
+        panel.classList.add('edit-mode');
+        if (btn) btn.textContent = '💾 儲存資料';
+    } else {
+        panel.classList.remove('edit-mode');
+        if (btn) btn.textContent = '✏️ 編輯資料';
+        inputs.forEach(el => el.setAttribute('readonly', true));
+    }
+    if (on) inputs.forEach(el => el.removeAttribute('readonly'));
+}
+
+async function saveCurrentData() {
+    const item = items[current];
+    if (!item || !item.id) return;
+
+    const updated = {
+        name:     document.getElementById('lbName').value,
+        intro:    document.getElementById('lbIntro').value,
+        age:      document.getElementById('lbAge').value,
+        height:   document.getElementById('lbHeight').value,
+        weight:   document.getElementById('lbWeight').value,
+        bust:     document.getElementById('lbBust').value,
+        waist:    document.getElementById('lbWaist').value,
+        hip:      document.getElementById('lbHip').value,
+        price:    document.getElementById('lbPrice').value,
+        line:     document.getElementById('lbLine').value,
+        phone:    document.getElementById('lbPhone').value,
+        services: item.services || [],
+    };
+
+    showLoading('儲存中...');
+    const { error } = await sb.from(TABLE).update(updated).eq('id', item.id);
+    hideLoading();
+
+    if (error) {
+        alert('儲存失敗：' + error.message);
+        return;
+    }
+
+    Object.assign(items[current], updated);
+    applyEditMode(false);
+    const notice = document.getElementById('saveNotice');
+    notice.classList.add('show');
+    setTimeout(() => notice.classList.remove('show'), 2500);
+}
+
+function addTag() {
+    const input = document.getElementById('newTagInput');
+    const val   = input.value.trim();
+    if (!val) return;
+    if (!items[current].services) items[current].services = [];
+    items[current].services.push(val);
+    input.value = '';
+    renderTags(items[current].services);
+}
+
+function removeTag(index) {
+    items[current].services.splice(index, 1);
+    renderTags(items[current].services);
+}
+
+// ══════════════════════════════════════════
+// 刪除照片
+// ══════════════════════════════════════════
+function confirmDelete() {
+    if (!isAdmin) { openAdminModal(); return; }
+    document.getElementById('confirmModal').classList.add('open');
+}
+
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.remove('open');
+}
+
+async function deleteCurrentItem() {
+    const item = items[current];
+    if (!item || !item.id) return;
+
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = '刪除中...';
+
+    try {
+        // 1. 刪除 Storage 裡的圖片
+        if (item.storage_path) {
+            await sb.storage.from(BUCKET).remove([item.storage_path]);
+        }
+
+        // 2. 刪除資料表記錄
+        const { error } = await sb.from(TABLE).delete().eq('id', item.id);
+        if (error) throw error;
+
+        // 3. 關閉 modal 和 lightbox，重新載入
+        closeConfirm();
+        closeLightbox();
+        showLoading('更新中...');
+        await loadFromSupabase();
+        hideLoading();
+
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '確定刪除';
+        alert('刪除失敗：' + (e.message || e));
+    }
+}
+
+// ══════════════════════════════════════════
+// 聯絡 Modal
+// ══════════════════════════════════════════
+function openContactModal() {
+    // 預填感興趣對象
+    const item = items[current];
+    if (item) {
+        document.getElementById('contactTarget').value = item.name || `No.${current+1}`;
+    }
+    document.getElementById('modalContent').innerHTML = `
+        <div class="modal-title">📩 預約諮詢</div>
+        <div class="modal-sub">填寫以下資料，我們會盡快與你聯絡</div>
+        <div class="modal-field"><label>你的姓名</label><input type="text" id="contactName" placeholder="請輸入姓名"></div>
+        <div class="modal-field"><label>LINE ID / 電話</label><input type="text" id="contactLine" placeholder="方便聯絡的方式"></div>
+        <div class="modal-field"><label>感興趣的對象</label><input type="text" id="contactTarget" placeholder="例：No.3 小美" value="${item ? (item.name || 'No.'+(current+1)) : ''}"></div>
+        <div class="modal-field"><label>備註 / 需求</label><textarea id="contactNote" placeholder="其他需求或時間..."></textarea></div>
+        <div class="modal-actions">
+            <button class="modal-cancel" onclick="closeContactModal()">取消</button>
+            <button class="modal-submit" id="submitBtn" onclick="submitContact()">送出預約 🚀</button>
+        </div>
+    `;
+    document.getElementById('contactModal').classList.add('open');
+}
+
+function closeContactModal() {
+    document.getElementById('contactModal').classList.remove('open');
+}
+
+async function submitContact() {
+    const name   = document.getElementById('contactName').value.trim();
+    const line   = document.getElementById('contactLine').value.trim();
+    const target = document.getElementById('contactTarget').value.trim();
+    const note   = document.getElementById('contactNote').value.trim();
+
+    if (!name || !line) {
+        alert('請填寫姓名和聯絡方式');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '送出中...';
+
+    try {
+        await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+            from_name:    name,
+            contact_info: line,
+            target_name:  target,
+            message:      note || '（無備註）',
+            reply_to:     line,
+        });
+
+        document.getElementById('modalContent').innerHTML = `
+            <div class="modal-success">
+                <div class="success-icon">✅</div>
+                <div class="modal-title" style="text-align:center;margin-bottom:8px;">預約成功！</div>
+                <p>我們已收到您的預約，將盡快透過 LINE 或電話與您聯絡。</p>
+                <br>
+                <button class="modal-submit" onclick="closeContactModal()" style="width:100%">關閉</button>
+            </div>
+        `;
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '送出預約 🚀';
+        alert('送出失敗，請稍後再試：' + (e.text || e.message || JSON.stringify(e)));
+    }
+}
+
+// ══════════════════════════════════════════
+// 鍵盤快捷鍵
+// ══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (!editMode && e.key === 'ArrowLeft')  navLightbox(-1);
+    if (!editMode && e.key === 'ArrowRight') navLightbox(1);
+});
+document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+});
+document.getElementById('adminModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAdminModal();
+});
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirm();
+});
+document.getElementById('contactModal').addEventListener('click', function(e) {
+    if (e.target === this) closeContactModal();
+});
+
+// ══════════════════════════════════════════
+// 啟動
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
