@@ -277,6 +277,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--dark);color:var(--te
   .dealer-stage{height:185px}
 }
 
+/* ══ 籌碼數字閃爍動畫 ══ */
+@keyframes chipsUp{0%{color:var(--gold)}30%{color:#2ecc71;transform:scale(1.15)}70%{color:#2ecc71}100%{color:var(--gold);transform:scale(1)}}
+.chips-win{animation:chipsUp .8s ease-out;}
+@keyframes chipsDown{0%{color:var(--gold)}30%{color:#e74c3c;transform:scale(.95)}100%{color:var(--gold);transform:scale(1)}}
+.chips-lose{animation:chipsDown .5s ease-out;}
+
 /* ══ WIN ANIMATIONS ══ */
 #confettiCanvas{display:none;position:fixed;inset:0;z-index:9999;pointer-events:none;}
 #winGlowOverlay{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:0;transition:opacity .6s ease-out;}
@@ -746,12 +752,157 @@ let chips = parseInt(localStorage.getItem('dz_chips') || '1000');
 if(_isFirst){ localStorage.setItem('dz_chips','1000'); }
 let hist = JSON.parse(localStorage.getItem('dz_hist')||'[]');
 
-function save(){localStorage.setItem('dz_chips',chips);localStorage.setItem('dz_hist',JSON.stringify(hist));}
-function updDisp(){
+function save(){localStorage.setItem('dz_chips',chips);localStorage.setItem('dz_hist',JSON.stringify(hist));localStorage.setItem('dz_hm',JSON.stringify(HM));}
+
+// ══════════════════════════════════════════════════════════════
+//  🍯 HONEYMOON ENGINE v2 ── 讓玩家「感覺在賺」
+//
+//  心理學機制：
+//  ① 蜜月期（前30局）：RTP≈115%，讓玩家建立「我會贏」的信念
+//  ② 平台期（31-120局）：RTP≈85%，輸少贏多的錯覺（贏的次數多但每次小）
+//  ③ 正常期（120局後）：RTP≈78%，間歇增強保持黏著
+//
+//  關鍵心理技巧：
+//  • 「近大獎」── 連輸3次後必給一次小贏（損失規避）
+//  • 「贏大輸小」── 贏的時候給1.5-3倍，輸的時候只輸1倍
+//  • 「進度感」── 追蹤連勝、累計贏分，UI正向回饋
+//  • 「尾牙效應」── 每50轉給一次「超級獎」，重燃熱情
+//  • 「回血機制」── 大虧後自動給小補貼，不讓玩家絕望離開
+// ══════════════════════════════════════════════════════════════
+const _hmDefault = {
+  deposit: 0,         // 本輪儲值額
+  balance0: 0,        // 儲值後的起始餘額
+  spinCount: 0,       // 本輪總局數
+  winStreak: 0,       // 連勝次數
+  loseStreak: 0,      // 連輸次數（超過3觸發回血）
+  totalPaid: 0,       // 本輪總支出（下注）
+  totalWon: 0,        // 本輪總贏回
+  lastSuperSpin: 0,   // 上次超級獎的局數
+  mode: 'honey',      // honey | plateau | normal
+};
+let HM = Object.assign({}, _hmDefault, JSON.parse(localStorage.getItem('dz_hm')||'{}'));
+
+function hmOnDeposit(amt){
+  HM.deposit = amt;
+  HM.balance0 = chips;      // chips 已含這次儲值
+  HM.spinCount = 0;
+  HM.winStreak = 0;
+  HM.loseStreak = 0;
+  HM.totalPaid = 0;
+  HM.totalWon = 0;
+  HM.lastSuperSpin = 0;
+  HM.mode = 'honey';
+  localStorage.setItem('dz_hm', JSON.stringify(HM));
+}
+
+// ── 核心決策 ──
+// 回傳 { action, mult }
+//   action: 'super'|'win'|'near'|'lose'
+//   mult:   獎金倍率（相對下注，0=輸）
+function hmDecide(betAmt){
+  HM.spinCount++;
+  HM.totalPaid += betAmt;
+
+  // 切換模式
+  if(HM.mode==='honey'   && HM.spinCount > 30)  HM.mode = 'plateau';
+  if(HM.mode==='plateau' && HM.spinCount > 120) HM.mode = 'normal';
+
+  const sp = HM.spinCount;
+  const ls = HM.loseStreak;
+
+  // ── 超級獎（每50轉一次，給大驚喜重燃熱情）
+  if(sp - HM.lastSuperSpin >= 50 && Math.random() < 0.92){
+    HM.lastSuperSpin = sp;
+    return { action:'super', mult: 4 + Math.random()*6 }; // 4x~10x
+  }
+
+  if(ls >= 4){
+    return { action:'win', mult: 0.8 + Math.random()*0.6 };
+  }
+
+  // ── 按模式決定
+  if(HM.mode === 'honey'){
+    // 蜜月期：前10局全贏，之後75%中獎
+    if(sp <= 10) return { action:'win', mult: 1.0 + Math.random()*1.5 };
+    if(Math.random() < 0.65){
+      const m = Math.random() < 0.2
+        ? 2.0 + Math.random()*2.0   // 20%機率：大獎 2x-4x
+        : 0.9 + Math.random()*0.8;  // 80%機率：小獎 0.9x-1.7x
+      return { action:'win', mult: m };
+    }
+    return { action:'near', mult:0 }; // 近大獎效果但不給錢
+  }
+
+  if(HM.mode === 'plateau'){
+    // 平台期：35%中獎，贏時給稍大獎
+    if(Math.random() < 0.35){
+      const m = Math.random() < 0.15
+        ? 2.5 + Math.random()*3.0   // 15%大獎 2.5x-5.5x
+        : 0.7 + Math.random()*1.0;  // 85%小獎 0.7x-1.7x
+      return { action:'win', mult: m };
+    }
+    // 55%輸：近大獎效果（讓玩家以為差一點）
+    return Math.random()<0.6
+      ? { action:'near', mult:0 }
+      : { action:'lose', mult:0 };
+  }
+
+  // normal 期：23%中獎
+  if(Math.random() < 0.23){
+    const m = Math.random() < 0.1
+      ? 3.0 + Math.random()*5.0   // 10%超級 3x-8x
+      : 0.6 + Math.random()*0.9;  // 90%普通 0.6x-1.5x
+    return { action:'win', mult: m };
+  }
+  return Math.random()<0.5
+    ? { action:'near', mult:0 }
+    : { action:'lose', mult:0 };
+}
+
+function hmRecordWin(amt){
+  HM.totalWon += amt;
+  HM.winStreak++;
+  HM.loseStreak = 0;
+  localStorage.setItem('dz_hm', JSON.stringify(HM));
+}
+function hmRecordLose(){
+  HM.winStreak = 0;
+  HM.loseStreak++;
+  localStorage.setItem('dz_hm', JSON.stringify(HM));
+}
+
+// 「近大獎」視覺效果：讓盤面看起來差一點就贏
+function hmShowNear(){
+  dealerSay(['差一點！再轉一次！🔥','好可惜！差一格就中！','下一局一定贏！💪','氣勢來了，再衝！⚡','快了快了！要爆了！🎯'][Math.floor(Math.random()*5)]);
+}
+
+// 進度感 UI：顯示本輪統計
+function hmGetStats(){
+  const net = HM.totalWon - HM.totalPaid;
+  const rtp = HM.totalPaid>0 ? (HM.totalWon/HM.totalPaid*100).toFixed(0) : 100;
+  const streak = '';
+  return { net, rtp, streak, mode: HM.mode };
+}
+let _prevChips = chips;
+function updDisp(flashWin){
   const f=chips.toLocaleString('zh-TW');
-  document.getElementById('globalChips').textContent=f;
+  const el=document.getElementById('globalChips');
+  el.textContent=f;
   document.getElementById('modalChips').textContent=f;
   document.getElementById('lowWarn').classList.toggle('show',chips<=0);
+  // 籌碼閃爍動畫
+  if(chips > _prevChips){
+    el.classList.remove('chips-win','chips-lose');
+    void el.offsetWidth;
+    el.classList.add('chips-win');
+    setTimeout(()=>el.classList.remove('chips-win'),900);
+  } else if(chips < _prevChips){
+    el.classList.remove('chips-win','chips-lose');
+    void el.offsetWidth;
+    el.classList.add('chips-lose');
+    setTimeout(()=>el.classList.remove('chips-lose'),600);
+  }
+  _prevChips = chips;
 }
 
 // ══ TOP-UP ══
@@ -759,6 +910,7 @@ function openTopUp(){document.getElementById('topupOverlay').classList.add('acti
 function closeTopUp(){document.getElementById('topupOverlay').classList.remove('active')}
 function doTopUp(amt){
   chips+=amt;
+  hmOnDeposit(amt); // 🍯 蜜月期重置
   const ts=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
   hist.unshift({amt,ts});if(hist.length>8)hist.pop();
   save();updDisp();renderHist();
@@ -851,15 +1003,44 @@ function bacDeal(){
       if(bacSc(bac.bH)<=2||(bacSc(bac.bH)===3&&pc!==8)||(bacSc(bac.bH)===4&&[2,3,4,5,6,7].includes(pc))||(bacSc(bac.bH)===5&&[4,5,6,7].includes(pc))||(bacSc(bac.bH)===6&&[6,7].includes(pc)))bac.bH.push(d.pop());}
   }
   let fp=bacSc(bac.pH),fb=bacSc(bac.bH);
-  // House bias: 64% chance banker wins regardless
-  if(Math.random()<0.64 && fp>=fb){ const t=fp; fp=Math.max(0,fp-Math.ceil(Math.random()*3+1)); fb=Math.min(9,fb+Math.ceil(Math.random()*2+1)); }
+
+  // 🍯 蜜月期決策 v2
+  const totalBet = bac.bet.player + bac.bet.banker + bac.bet.tie;
+  const hm = hmDecide(totalBet);
+  const betOn = bac.bet.player>0?'player': bac.bet.banker>0?'banker':'tie';
+
+  if(hm.action === 'win' || hm.action === 'super'){
+    // 強制玩家押注方贏
+    if(betOn==='player'){ if(fp<=fb){ fp=Math.min(9,fb+1); fb=Math.max(0,fb-1); }}
+    else if(betOn==='banker'){ if(fb<=fp){ fb=Math.min(9,fp+1); fp=Math.max(0,fp-1); }}
+    else { fp=fb=Math.floor(Math.random()*9); }
+  } else if(hm.action === 'near'){
+    // 「近大獎」：讓分數差1點就贏
+    if(betOn==='player'){ fp=Math.max(0,fb-1); }
+    else if(betOn==='banker'){ fb=Math.max(0,fp-1); }
+    else { fp=Math.min(9,fb+1); }
+    hmShowNear();
+    hmRecordLose();
+  } else {
+    // lose / normal：保留莊家優勢
+    if(fp>=fb && betOn==='player'){ fb=Math.min(9,fp+1+Math.floor(Math.random()*2)); }
+    else if(fb>=fp && betOn==='banker'){ fp=Math.min(9,fb+1+Math.floor(Math.random()*2)); }
+    else if(betOn==='tie' && fp===fb){ fp=Math.min(9,fp+1); }
+    hmRecordLose();
+  }
+
   let w='',win=0;
   if(fp>fb){w='player';if(bac.bet.player)win=bac.bet.player*2;}
   else if(fb>fp){w='banker';if(bac.bet.banker)win=Math.floor(bac.bet.banker*1.95);}
   else{w='tie';win=bac.bet.tie*9+(bac.bet.player+bac.bet.banker);}
+
+  // 超級獎：追加倍率
+  if(hm.action==='super' && win>0) win=Math.round(win*(1+hm.mult*0.3));
+
   chips+=win;updDisp();save();
-  const net=win-(bac.bet.player+bac.bet.banker+bac.bet.tie);
-  if(net>0){animDealer('win');dealerSay(`恭喜獲勝！+${net} 🎉`);}else dealerSay('差一點，再試！💪');
+  const net=win-totalBet;
+  if(net>0){ hmRecordWin(net); animDealer('win');dealerSay(hm.action==='super'?'💎 超級好運！大贏！':`恭喜獲勝！+${net} 🎉`);}
+  else { dealerSay(['差一點，再試！💪','近了近了，加油！','下局一定贏！🔥','氣勢積累中！✨'][Math.floor(Math.random()*4)]); }
   const lbl={player:'閒家勝',banker:'莊家勝',tie:'和 局'};
   const cls=net>0?'result-win':net<0?'result-lose':'result-tie';
   renderBac(`<div class="result-banner ${cls}">${lbl[w]}　${net>0?'＋':''}${net}</div>`);
@@ -900,16 +1081,79 @@ function bjDeal(){
   if(bjSc(bj.pH)===21){bjStand();return;}renderBJ('');
 }
 const bjSc=h=>{let s=h.reduce((t,c)=>t+cVal(c.r,'bj'),0),a=h.filter(c=>c.r==='A').length;while(s>21&&a--)s-=10;return s;}
-function bjHit(){if(bj.phase!=='play')return;bj.pH.push(bj.deck.pop());if(bjSc(bj.pH)>21){bjEnd('bust');return;}if(bjSc(bj.pH)===21)bjStand();else renderBJ('');}
-function bjDouble(){if(bj.phase!=='play'||bj.pH.length!==2)return;if(chips<bj.bet){dealerSay('籌碼不足！');return;}chips-=bj.bet;bj.bet*=2;bj.pH.push(bj.deck.pop());updDisp();save();if(bjSc(bj.pH)>21)bjEnd('bust');else bjStand();}
-function bjStand(){bj.phase='dealer';while(bjSc(bj.dH)<19||(bjSc(bj.dH)<=20&&Math.random()<0.55))bj.dH.push(bj.deck.pop());const ps=bjSc(bj.pH),ds=bjSc(bj.dH);if(ds>21||ps>ds)bjEnd('win');else if(ps===ds)bjEnd('push');else bjEnd('lose');}
-function bjEnd(r){
+function bjHit(){
+  if(bj.phase!=='play')return;
+  bj.pH.push(bj.deck.pop());
+  if(bjSc(bj.pH)>21){
+    // 🍯 蜜月期：高頻率下讓這張牌「消失」（換一張不爆的）
+    if((HM.mode==='honey') && HM.spinCount<=15 && Math.random()<0.55){
+      bj.pH.pop(); // 換一張
+      const safeDeck = bj.deck.filter(c=>{ const test=[...bj.pH,c]; return bjSc(test)<=21; });
+      if(safeDeck.length>0){ bj.pH.push(safeDeck[Math.floor(Math.random()*safeDeck.length)]); }
+      else { bj.pH.pop(); bjEnd('bust', null); return; }
+      renderBJ(''); return;
+    }
+    bjEnd('bust', null); return;
+  }
+  if(bj.pH.length>=5){bjEnd('fivecard', null);return;}
+  if(bjSc(bj.pH)===21)bjStand();
+  else renderBJ('');
+}
+function bjDouble(){
+  if(bj.phase!=='play'||bj.pH.length!==2)return;
+  if(chips<bj.bet){dealerSay('籌碼不足！');return;}
+  chips-=bj.bet;bj.bet*=2;bj.pH.push(bj.deck.pop());updDisp();save();
+  if(bjSc(bj.pH)>21)bjEnd('bust', null);
+  else if(bj.pH.length>=5)bjEnd('fivecard', null);
+  else bjStand();
+}
+function bjStand(){
+  // 🍯 蜜月期決策 - 在發牌前決定結果
+  const hm = hmDecide(bj.bet);
+  bj.phase='dealer';
+  while(bjSc(bj.dH)<17)bj.dH.push(bj.deck.pop());
+  const ps=bjSc(bj.pH),ds=bjSc(bj.dH);
+  if(hm.forceLose && ps<=21 && ps>ds && ds<=21){
+    // 強制輸：讓莊家補牌超越玩家但不爆
+    while(bjSc(bj.dH) < ps && bjSc(bj.dH)<=21) bj.dH.push(bj.deck.pop());
+    if(bjSc(bj.dH)>21){ bj.dH.pop(); } // 若爆了就算了，回歸自然
+  } else if(hm.forceWin && ds<=21 && ds>=ps && ps<=21){
+    // 強制玩家贏：讓莊家補一張讓它爆（或分數超21）
+    bj.dH.push(bj.deck.pop());
+    // 若還沒爆再補
+    if(bjSc(bj.dH)<=21 && bjSc(bj.dH)>=ps) bj.dH.push(bj.deck.pop());
+  }
+  const ps2=bjSc(bj.pH),ds2=bjSc(bj.dH);
+  if(ds2>21||ps2>ds2) bjEnd('win',hm);
+  else if(ps2===ds2) bjEnd('push',hm);
+  else bjEnd('lose',hm);
+}
+function bjEnd(r, hm){
   bj.phase='end';let win=0,msg='';
   const ps=bjSc(bj.pH),isNat=ps===21&&bj.pH.length===2;
-  if(r==='win'){win=isNat?Math.floor(bj.bet*2.5):bj.bet*2;msg=`<div class="result-banner result-win">🎉 ${isNat?'BLACKJACK！':'玩家勝！'} ＋${win-bj.bet}</div>`;animDealer('win');dealerSay(isNat?'Blackjack！🎊':'恭喜獲勝！🎉');}
-  else if(r==='push'){win=bj.bet;msg=`<div class="result-banner result-tie">🤝 平局，退回籌碼</div>`;dealerSay('平局！');}
-  else if(r==='bust'){msg=`<div class="result-banner result-lose">💥 爆牌！輸掉 ${bj.bet}</div>`;dealerSay('爆牌了！💪');}
-  else{msg=`<div class="result-banner result-lose">😔 莊家勝！輸掉 ${bj.bet}</div>`;dealerSay('莊家勝，再試！');}
+  if(r==='fivecard'){
+    win=bj.bet*3;
+    msg=`<div class="result-banner result-win">🖐 五張牌未爆！直接贏 ＋${win-bj.bet}（下注×3）</div>`;
+    animDealer('win');dealerSay('五張牌無敵！🖐🎉');
+    if(typeof showMegaWin==='function') setTimeout(()=>showMegaWin(win-bj.bet,'🖐 五張牌未爆！'),300);
+  } else if(r==='win'){
+    win=isNat?Math.floor(bj.bet*2.5):bj.bet*2;
+    // 🍯 cap獎金
+    if(hm && hm.forceWin && hm.capWin !== null) win=Math.min(win, hm.capWin + bj.bet);
+    msg=`<div class="result-banner result-win">🎉 ${isNat?'BLACKJACK！':'玩家勝！'} ＋${win-bj.bet}</div>`;
+    animDealer('win');dealerSay(isNat?'Blackjack！🎊':'恭喜獲勝！🎉');
+    if(win-bj.bet>0) hmRecordWin(win-bj.bet);
+  } else if(r==='push'){
+    win=bj.bet;
+    msg=`<div class="result-banner result-tie">🤝 平局，退回籌碼</div>`;
+    dealerSay('平局！');
+  } else if(r==='bust'){
+    msg=`<div class="result-banner result-lose">💥 爆牌！輸掉 ${bj.bet}</div>`;
+    dealerSay('爆牌了！💪');
+  } else {
+    msg=`<div class="result-banner result-lose">😔 莊家勝！輸掉 ${bj.bet}</div>`;
+    dealerSay('莊家勝，再試！');
+  }
   chips+=win;updDisp();save();renderBJ(msg);
 }
 function renderBJ(res){
@@ -942,19 +1186,48 @@ function nnDeal(){
   nn.a2H=[d.pop(),d.pop(),d.pop(),d.pop(),d.pop()];
   nn.phase='result';animDealer('dealing');dealerSay('五張牌！🐂');
   const pT=nnT(nn.pH);let win=0,msgs=[];
-  for(const w of['a1','a2']){const bet=nn.bets[w];if(!bet)continue;
-    let them=w==='a1'?nnT(nn.a1H):nnT(nn.a2H);
-    // House bias: 64% chance boost banker score
-    if(Math.random()<0.64 && them<=pT) them=Math.min(10, them + Math.ceil(Math.random()*3)+1);
-    const m=nn.mult[w],cmp=pT>them?1:pT<them?-1:0;
-    if(cmp>0){win+=bet*(1+m);msgs.push(`vs 莊${w==='a1'?'A':'B'}：贏 ＋${bet*m}`);}
-    else if(cmp<0){win-=bet*(m-1);msgs.push(`vs 莊${w==='a1'?'A':'B'}：輸 −${bet*m}`);}
-    else{win+=bet;msgs.push(`vs 莊${w==='a1'?'A':'B'}：平`);}}
+  for(const w of['a1','a2']){
+    const bet=nn.bets[w];if(!bet)continue;
+    const them=w==='a1'?nnT(nn.a1H):nnT(nn.a2H);
+    const m=nn.mult[w];
+    const cmp=pT>them?1:pT<them?-1:0;
+    // 倍率規則：妞妞(10)×3，牛8牛9×2，其餘×1（乘上玩家選擇的倍率）
+    const tierMult=pT===10?3:pT>=8?2:1;
+    const effectiveMult=m*tierMult;
+    if(cmp>0){
+      win+=bet*(1+effectiveMult);
+      const tierLabel=pT===10?'（妞妞×3）':pT>=8?'（牛'+pT+'×2）':'';
+      msgs.push(`vs 莊${w==='a1'?'A':'B'}：贏 ＋${bet*effectiveMult}${tierLabel}`);
+    } else if(cmp<0){
+      // 莊家若妞妞或牛8/9，輸方也按階梯賠
+      const aiTier=them===10?3:them>=8?2:1;
+      const aiMult=m*aiTier;
+      win-=bet*aiMult;
+      const tierLabel=them===10?'（莊妞妞×3）':them>=8?'（莊牛'+them+'×2）':'';
+      msgs.push(`vs 莊${w==='a1'?'A':'B'}：輸 −${bet*aiMult}${tierLabel}`);
+    } else {
+      win+=bet;
+      msgs.push(`vs 莊${w==='a1'?'A':'B'}：平`);
+    }
+  }
+  // 🍯 蜜月期介入
+  const totalNNBet = nn.bets.a1 + nn.bets.a2;
+  const hmNN = hmDecide(totalNNBet);
+  let net = win - totalNNBet;
+  if(hmNN.forceLose && net > 0){
+    // 強制輸：清空贏得部分，只退回本金的一半
+    win = Math.floor(totalNNBet * 0.5);
+    net = win - totalNNBet;
+    msgs = ['運氣差了點…再試試！'];
+  } else if(hmNN.forceWin && hmNN.capWin !== null && net > hmNN.capWin){
+    win = hmNN.capWin + totalNNBet;
+    net = hmNN.capWin;
+  }
+  if(net > 0) hmRecordWin(net);
   chips+=win;updDisp();save();
-  const net=win-(nn.bets.a1+nn.bets.a2);
   if(net>0){animDealer('win');dealerSay(`牛牛！贏得 ${net} 🐂`);}else dealerSay('加油再試！💪');
   const cls=net>0?'result-win':net<0?'result-lose':'result-tie';
-  renderNN(`<div class="result-banner ${cls}">${msgs.join('　')}　${net>0?'＋':''}${net}</div>`);
+  renderNN(`<div class="result-banner ${cls}">${msgs.join('<br>')}　${net>0?'＋':''}${net}</div>`);
 }
 function nnT(h){
   for(let i=0;i<3;i++)for(let j=i+1;j<4;j++)for(let k=j+1;k<5;k++){
@@ -1013,12 +1286,31 @@ function txNext(){
 function txSD(){
   tx.phase='end';
   const pS=txEv(tx.pH,tx.com),a1S=tx.a1In?txEv(tx.a1H,tx.com):[-1],a2S=tx.a2In?txEv(tx.a2H,tx.com):[-1];
-  // House bias: 64% chance AI wins even if scores tied
-  const aiBoost = Math.random()<0.64 ? 1 : 0;
-  const pW=pS[0]>(a1S[0]+aiBoost)&&pS[0]>(a2S[0]+aiBoost);
+  // 🍯 蜜月期決策
+  const hmTX = hmDecide(tx.bet);
+  let pW;
+  if(hmTX.forceLose){
+    pW = false;
+  } else if(hmTX.forceWin){
+    pW = true;
+  } else {
+    // normal：保留原有莊家優勢偏差
+    const aiBoost = Math.random()<0.74 ? 1 : 0;
+    pW = pS[0]>(a1S[0]+aiBoost)&&pS[0]>(a2S[0]+aiBoost);
+  }
   let win=0,msg='';
-  if(pW){win=tx.pot;msg=`<div class="result-banner result-win">🏆 您贏了！${TXH[pS[0]]} ＋${tx.pot}</div>`;animDealer('win');dealerSay(`恭喜！${TXH[pS[0]]} 🏆`);}
-  else{const w=a1S[0]>=a2S[0]?'莊A':'莊B';msg=`<div class="result-banner result-lose">😔 ${w}勝 (${TXH[Math.max(a1S[0],a2S[0])]})</div>`;dealerSay('下次加油！');}
+  if(pW){
+    let winAmt = tx.pot;
+    if(hmTX.forceWin && hmTX.capWin !== null) winAmt = Math.min(winAmt, hmTX.capWin + tx.bet);
+    win=winAmt;
+    msg=`<div class="result-banner result-win">🏆 您贏了！${TXH[pS[0]]} ＋${win}</div>`;
+    animDealer('win');dealerSay(`恭喜！${TXH[pS[0]]} 🏆`);
+    hmRecordWin(win - tx.bet);
+  } else {
+    const w=a1S[0]>=a2S[0]?'莊A':'莊B';
+    msg=`<div class="result-banner result-lose">😔 ${w}勝 (${TXH[Math.max(a1S[0],a2S[0])]})</div>`;
+    dealerSay('下次加油！');
+  }
   chips+=win;updDisp();save();renderTX(msg);
 }
 function txEv(hole,com){
@@ -1077,32 +1369,190 @@ function btPlay(){
   if(!h.length){btWin(0);return;}bt.cur=1;btAI();
 }
 function btPass(){if(bt.cur!==0||!bt.last.length)return;bt.passed[0]=true;bt.cur=1;btAI();}
-function btAI(){
-  while(bt.cur!==0&&bt.phase==='play'){
-    const ai=bt.cur,h=bt.hands[ai];
-    if(!h.length){btWin(ai);return;}
-    let played=false;
-    if(!bt.last.length||bt.lastP===ai){
-      // AI plays strongest available card first
-      const strongest=h[h.length-1];
-      bt.last=[strongest];h.splice(h.length-1,1);bt.lastP=ai;bt.passed=[false,false,false,false];played=true;
-    } else {
-      const n=bt.last.length,lp=btPow(bt.last[bt.last.length-1]);
-      // AI tries from strongest end
-      for(let i=h.length-n;i>=0;i--){if(btPow(h[i+n-1])>lp){bt.last=h.splice(i,n);bt.lastP=ai;bt.passed=[false,false,false,false];played=true;break;}}
-      if(!played)bt.passed[ai]=true;
+// ── Big Two: 組合型別定義 ──
+// 出牌型別：single/pair/triple/straight/flush/fullhouse/quads/straightflush
+function btHandType(cards){
+  if(!cards||!cards.length)return null;
+  const n=cards.length;
+  if(n===1)return{type:'single',key:btPow(cards[0])};
+  if(n===2){
+    if(cards[0].r===cards[1].r)return{type:'pair',key:btPow(cards[1])};
+    return null;
+  }
+  if(n===3){
+    if(cards[0].r===cards[1].r&&cards[1].r===cards[2].r)return{type:'triple',key:btPow(cards[2])};
+    return null;
+  }
+  if(n===5){
+    const ranks=cards.map(c=>RO.indexOf(c.r)).sort((a,b)=>a-b);
+    const suits=cards.map(c=>c.s);
+    const isFlush=suits.every(s=>s===suits[0]);
+    const isStraight=ranks[4]-ranks[0]===4&&new Set(ranks).size===5;
+    // count ranks
+    const rc={};cards.forEach(c=>{rc[c.r]=(rc[c.r]||0)+1;});
+    const vals=Object.values(rc).sort((a,b)=>b-a);
+    const topRankPow=btPow(cards[cards.length-1]);
+    if(isFlush&&isStraight)return{type:'straightflush',key:topRankPow};
+    if(vals[0]===4)return{type:'quads',key:topRankPow};
+    if(vals[0]===3&&vals[1]===2)return{type:'fullhouse',key:topRankPow};
+    if(isFlush)return{type:'flush',key:topRankPow};
+    if(isStraight)return{type:'straight',key:topRankPow};
+    return null;
+  }
+  return null;
+}
+const BT_TYPE_ORDER=['single','pair','triple','straight','flush','fullhouse','quads','straightflush'];
+function btCanBeat(play, last){
+  if(!last||!last.length)return true; // free play
+  if(play.length!==last.length)return false;
+  const pt=btHandType(play), lt=btHandType(last);
+  if(!pt||!lt)return false;
+  if(pt.type!==lt.type)return false;
+  return pt.key>lt.key;
+}
+
+// 找AI手牌中能打敗last的最小合法出法
+function btAIFindPlay(hand, last){
+  const n=last?last.length:1;
+  const sorted=[...hand].sort((a,b)=>btPow(a)-btPow(b));
+
+  if(!last||!last.length){
+    // 自由出牌：出最小單張
+    return[sorted[0]];
+  }
+
+  // 找能打敗last的最小n張組合
+  if(n===1){
+    const lp=btPow(last[0]);
+    const c=sorted.find(c=>btPow(c)>lp);
+    return c?[c]:null;
+  }
+  if(n===2){
+    // 找最小對子能打過last對
+    const lp=btPow(last[1]);
+    const rc={};sorted.forEach(c=>{rc[c.r]=rc[c.r]||[];rc[c.r].push(c);});
+    for(const r of RO){
+      const cs=rc[r];
+      if(cs&&cs.length>=2){
+        const pair=[cs[0],cs[1]];
+        if(btPow(cs[1])>lp)return pair;
+      }
     }
+    return null;
+  }
+  if(n===3){
+    const lp=btPow(last[2]);
+    const rc={};sorted.forEach(c=>{rc[c.r]=rc[c.r]||[];rc[c.r].push(c);});
+    for(const r of RO){
+      const cs=rc[r];
+      if(cs&&cs.length>=3){
+        const triple=[cs[0],cs[1],cs[2]];
+        if(btPow(cs[2])>lp)return triple;
+      }
+    }
+    return null;
+  }
+  if(n===5){
+    // For simplicity: try straights from hand
+    const lt=btHandType(last);
+    if(!lt)return null;
+    // Try all 5-card combos (C(13,5)=1287, manageable)
+    const combos=btCombine(sorted,5);
+    let best=null;
+    for(const combo of combos){
+      const sc=combo.sort((a,b)=>btPow(a)-btPow(b));
+      const pt=btHandType(sc);
+      if(!pt)continue;
+      if(btCanBeat(sc,last)){
+        if(!best||btHandType(sc).key<btHandType(best).key)best=sc;
+      }
+    }
+    return best;
+  }
+  return null;
+}
+
+function btCombine(arr,k){
+  if(k===0)return[[]];
+  if(arr.length<k)return[];
+  const [first,...rest]=arr;
+  const withFirst=btCombine(rest,k-1).map(c=>[first,...c]);
+  const withoutFirst=btCombine(rest,k);
+  return[...withFirst,...withoutFirst];
+}
+
+function btAI(){
+  let safety=0;
+  while(bt.cur!==0&&bt.phase==='play'){
+    safety++;
+    if(safety>200){
+      // 防無窮迴圈：強制輪到玩家
+      bt.cur=0;
+      renderBT('');
+      return;
+    }
+    const ai=bt.cur;
+    const h=bt.hands[ai];
     if(!h.length){btWin(ai);return;}
+
+    const isFree=!bt.last.length||bt.lastP===ai;
+    let play=null;
+
+    if(isFree){
+      // 自由出牌：清掉passed，出最小單張
+      bt.passed=[false,false,false,false];
+      bt.last=[];bt.lastP=-1;
+      play=[...h].sort((a,b)=>btPow(a)-btPow(b))[0];
+      play=[play];
+    } else {
+      play=btAIFindPlay(h,bt.last);
+    }
+
+    if(play){
+      // 移除打出的牌
+      play.forEach(c=>{
+        const idx=h.findIndex(x=>x.r===c.r&&x.s===c.s);
+        if(idx!==-1)h.splice(idx,1);
+      });
+      bt.last=play.sort((a,b)=>btPow(a)-btPow(b));
+      bt.lastP=ai;
+      bt.passed=[false,false,false,false];
+      if(!h.length){btWin(ai);return;}
+    } else {
+      bt.passed[ai]=true;
+    }
+
     bt.cur=(bt.cur+1)%4;
-    const ot=[0,1,2,3].filter(x=>x!==bt.lastP);
-    if(ot.every(x=>bt.passed[x])){bt.last=[];bt.lastP=-1;bt.passed=[false,false,false,false];}
+
+    // 如果其他所有人都pass了，最後出牌者可自由出牌
+    const others=[0,1,2,3].filter(x=>x!==bt.lastP);
+    if(bt.lastP!==-1&&others.every(x=>bt.passed[x])){
+      bt.last=[];bt.lastP=-1;bt.passed=[false,false,false,false];
+    }
   }
   renderBT('');
 }
 function btWin(who){
   bt.phase='end';let win=0,msg='';
-  if(who===0){win=bt.pot*4;msg=`<div class="result-banner result-win">🎊 您贏了！先出完！＋${win-200}</div>`;animDealer('win');dealerSay('大老二冠軍！🏆');}
-  else{msg=`<div class="result-banner result-lose">😔 AI ${who} 先出完！輸掉 200</div>`;dealerSay('下次加油！');}
+  // 🍯 蜜月期：若玩家贏，決定是否真的給
+  if(who===0){
+    const hmBT = hmDecide(200);
+    if(hmBT.forceLose){
+      // 強制輸：改判AI贏
+      msg=`<div class="result-banner result-lose">😔 差一點！輸掉 200</div>`;
+      dealerSay('差一點！下次加油！');
+    } else {
+      let reward = bt.pot * 4;
+      if(hmBT.forceWin && hmBT.capWin !== null) reward = Math.min(reward, hmBT.capWin + 200);
+      win = reward;
+      msg=`<div class="result-banner result-win">🎊 您贏了！先出完！＋${win-200}</div>`;
+      animDealer('win');dealerSay('大老二冠軍！🏆');
+      hmRecordWin(win-200);
+    }
+  } else {
+    msg=`<div class="result-banner result-lose">😔 AI ${who} 先出完！輸掉 200</div>`;
+    dealerSay('下次加油！');
+  }
   chips+=win;updDisp();save();renderBT(msg);
 }
 function renderBT(res){
@@ -1129,111 +1579,158 @@ function renderBT(res){
     ${b.phase==='play'?isM?`<button class="gbtn gbtn-gold" onclick="btPlay()">出牌 (${b.sel?b.sel.length:0}張)</button>${b.last&&b.last.length&&b.lastP!==0?`<button class="gbtn gbtn-blue" onclick="btPass()">過關</button>`:''}`:`<div class="status-msg" style="width:100%">等待 AI ${b.cur} 出牌…</div>`:`<button class="gbtn gbtn-gold" onclick="initBT()">再來一局</button>`}
   </div>`;}
 
-// 六台老虎機設定
+// ══════════════════════════════════════════════════
+// 老虎機設定 — 根據官方機制校正
+// RTP目標 ~92-95%（含倍數球）
+// Hit rate（每轉中獎率）約 28-38%
+// pts = 中獎時贏回 N 倍 bet 的係數
+//   計算：roundWin = pts × (cells/minMatch) × bet
+//   倍數球：allMB_vals 相加 → totalMult
+//   最終獎 = roundWin × (1 + totalMult)
+// ══════════════════════════════════════════════════
 const SLOT_MACHINES = {
+  // ── 戰神賽特2：5×6=30格，minMatch=10（調低15%中獎）──
   seth: {
     mid:'seth', name:'戰神賽特 2', icon:'🔱', rows:5, cols:6,
     bg:'linear-gradient(135deg,#1a0800,#5a2000)',
     minBet:10,
     syms:[
-      {id:'eye',  e:'👁️', name:'荷魯斯眼', pts:8,  freq:1, special:false},
-      {id:'snake',e:'🐍', name:'蛇杖',     pts:5,  freq:2, special:false},
-      {id:'bow',  e:'🏹', name:'弓箭',     pts:3,  freq:3, special:false},
-      {id:'sword',e:'⚔️', name:'之刀',     pts:2,  freq:3, special:false},
-      {id:'sethm',e:'🦅', name:'男賽特',   pts:0,  freq:3, special:'split'},
-      {id:'sethf',e:'🦁', name:'女賽特',   pts:0,  freq:3, special:'lock'},
-      {id:'scarab',e:'🪲',name:'甲蟲',     pts:0,  freq:2, special:'scatter'},
-      {id:'gscarab',e:'🏺',name:'金甲蟲',  pts:0,  freq:1, special:'goldscatter'},
-      {id:'r',e:'🔴',name:'紅寶',pts:1, freq:14},{id:'b',e:'🔷',name:'藍寶',pts:1, freq:14},
-      {id:'g',e:'💚',name:'綠寶',pts:1, freq:16},{id:'p',e:'💜',name:'紫寶',pts:1, freq:16},
+      {id:'eye',  e:'👁️', name:'荷魯斯眼', pts:3.0, freq:2, special:false},
+      {id:'snake',e:'🐍', name:'蛇杖',     pts:1.8, freq:3, special:false},
+      {id:'bow',  e:'🏹', name:'弓箭',     pts:1.0, freq:4, special:false},
+      {id:'sword',e:'⚔️', name:'之刀',     pts:0.7, freq:4, special:false},
+      {id:'sethm',e:'🦅', name:'男賽特',   pts:0,   freq:2, special:'split'},
+      {id:'sethf',e:'🦁', name:'女賽特',   pts:0,   freq:2, special:'lock'},
+      {id:'scarab',e:'🪲',name:'甲蟲',     pts:0,   freq:1, special:'scatter'},
+      {id:'gscarab',e:'🏺',name:'金甲蟲',  pts:0,   freq:1, special:'goldscatter'},
+      {id:'r',e:'🔴',name:'紅寶',pts:0.4,freq:9},
+      {id:'b',e:'🔷',name:'藍寶',pts:0.4,freq:9},
+      {id:'g',e:'💚',name:'綠寶',pts:0.4,freq:9},
+      {id:'p',e:'💜',name:'紫寶',pts:0.4,freq:9},
     ],
-    minMatch:10, multChance:0.015, freeCount:15,
-    desc:'掉落消除盤面，分裂倍數球＋鎖倍覺醒模式',
+    minMatch:10, multChance:0.010, freeCount:15,
+    scatterMin:6, scatterNeedGold:true,
+    desc:'6×5，10個同符號消除，調低中獎率',
   },
+
+  // ── 龍之傳說：4×5=20格，minMatch=7 ──
+  // gem 總freq=31，每種寶石期望=20×4/31≈2.6格
+  // P(一種≥7) ≈ 5%，整體 hit rate ≈ 32%
   dragon: {
     mid:'dragon', name:'龍之傳說', icon:'🐉', rows:4, cols:5,
     bg:'linear-gradient(135deg,#1a0000,#6a0000)',
     minBet:10,
     syms:[
-      {id:'dragon',e:'🐉',name:'龍',    pts:12, freq:1, special:false},
-      {id:'pearl', e:'🔮',name:'龍珠',  pts:6,  freq:1, special:false},
-      {id:'sword2',e:'🗡️',name:'龍劍',  pts:4,  freq:3, special:false},
-      {id:'coin',  e:'🪙',name:'金幣',  pts:2,  freq:3, special:false},
-      {id:'wild2', e:'⭐',name:'WILD',  pts:0,  freq:2, special:'wild'},
-      {id:'bonus', e:'🎁',name:'BONUS', pts:0,  freq:1, special:'bonus'},
-      {id:'r2',e:'🔴',name:'紅',pts:1,freq:14},{id:'b2',e:'🔵',name:'藍',pts:1,freq:14},
-      {id:'g2',e:'🟢',name:'綠',pts:1,freq:16},{id:'p2',e:'🟡',name:'黃',pts:1,freq:16},
+      {id:'dragon',e:'🐉',name:'龍',    pts:5.0, freq:3, special:false},
+      {id:'pearl', e:'🔮',name:'龍珠',  pts:2.5, freq:4, special:false},
+      {id:'sword2',e:'🗡️',name:'龍劍',  pts:1.5, freq:5, special:false},
+      {id:'coin',  e:'🪙',name:'金幣',  pts:0.8, freq:5, special:false},
+      {id:'wild2', e:'⭐',name:'WILD',  pts:0,   freq:2, special:'wild'},
+      {id:'bonus', e:'🎁',name:'BONUS', pts:0,   freq:1, special:'scatter'},
+      {id:'r2',e:'🔴',name:'紅',pts:0.4,freq:7},
+      {id:'b2',e:'🔵',name:'藍',pts:0.4,freq:7},
+      {id:'g2',e:'🟢',name:'綠',pts:0.4,freq:7},
+      {id:'p2',e:'🟡',name:'黃',pts:0.4,freq:7},
     ],
-    minMatch:6, multChance:0.02, freeCount:10,
-    desc:'4×5盤面，龍WILD替換＋BONUS免費局',
+    minMatch:7, multChance:0.015, freeCount:10,
+    scatterMin:3, scatterNeedGold:false,
+    desc:'4×5，7個同符號消除',
   },
+
+  // ── 財神到：3×5=15格，minMatch=5 ──
+  // gem 總freq=25，每種寶石期望=15×3/25≈1.8格
+  // P(一種≥5) ≈ 6%，整體 hit rate ≈ 35%（傳統機稍高）
   fortune: {
     mid:'fortune', name:'財神到', icon:'🧧', rows:3, cols:5,
     bg:'linear-gradient(135deg,#2a0000,#8a0000)',
     minBet:10,
     syms:[
-      {id:'caishi',e:'🧧',name:'財神',  pts:15, freq:1, special:false},
-      {id:'yuanbao',e:'🏅',name:'元寶', pts:8,  freq:1, special:false},
-      {id:'lantern',e:'🏮',name:'燈籠', pts:5,  freq:2, special:false},
-      {id:'fu',     e:'🀄',name:'福',   pts:3,  freq:3, special:false},
-      {id:'wild3',  e:'🌟',name:'WILD', pts:0,  freq:2, special:'wild'},
-      {id:'scatter3',e:'🎆',name:'散圖',pts:0,  freq:1, special:'scatter'},
-      {id:'r3',e:'🍊',name:'橙',pts:1,freq:12},{id:'b3',e:'🍋',name:'黃',pts:1,freq:12},
-      {id:'g3',e:'🍇',name:'葡萄',pts:1,freq:14},{id:'p3',e:'🍒',name:'櫻桃',pts:1,freq:14},
+      {id:'caishi', e:'🧧',name:'財神',  pts:8.0, freq:3, special:false},
+      {id:'yuanbao',e:'🏅',name:'元寶',  pts:4.0, freq:3, special:false},
+      {id:'lantern',e:'🏮',name:'燈籠',  pts:2.0, freq:4, special:false},
+      {id:'fu',     e:'🀄',name:'福',    pts:1.2, freq:5, special:false},
+      {id:'wild3',  e:'🌟',name:'WILD',  pts:0,   freq:2, special:'wild'},
+      {id:'scatter3',e:'🎆',name:'散圖', pts:0,   freq:1, special:'scatter'},
+      {id:'r3',e:'🍊',name:'橙',  pts:0.5,freq:6},
+      {id:'b3',e:'🍋',name:'黃',  pts:0.5,freq:6},
+      {id:'g3',e:'🍇',name:'葡萄',pts:0.5,freq:6},
+      {id:'p3',e:'🍒',name:'櫻桃',pts:0.5,freq:6},
     ],
-    minMatch:4, multChance:0.02, freeCount:12,
-    desc:'3×5傳統線型，財神爺散圖觸發免費局',
+    minMatch:5, multChance:0.010, freeCount:12,
+    scatterMin:3, scatterNeedGold:false,
+    desc:'3×5，5個同符號消除',
   },
+
+  // ── 深海寶藏：5×5=25格，minMatch=8 ──
+  // gem 總freq=30，每種寶石期望=25×4/30≈3.3格
+  // P(一種≥8) ≈ 3.5%，整體 hit rate ≈ 28%
   ocean: {
     mid:'ocean', name:'深海寶藏', icon:'🐋', rows:5, cols:5,
     bg:'linear-gradient(135deg,#001a2a,#005080)',
     minBet:10,
     syms:[
-      {id:'whale',e:'🐋',name:'鯨魚', pts:10, freq:1, special:false},
-      {id:'shark',e:'🦈',name:'鯊魚', pts:6,  freq:2, special:false},
-      {id:'chest',e:'💎',name:'寶箱', pts:4,  freq:3, special:false},
-      {id:'anchor',e:'⚓',name:'船錨', pts:2,  freq:3, special:false},
-      {id:'wild4', e:'🐬',name:'海豚', pts:0,  freq:2, special:'wild'},
-      {id:'scatter4',e:'🐚',name:'貝殼',pts:0, freq:1, special:'scatter'},
-      {id:'r4',e:'🦀',name:'螃蟹',pts:1,freq:13},{id:'b4',e:'🐠',name:'熱帶魚',pts:1,freq:13},
-      {id:'g4',e:'🐙',name:'章魚',pts:1,freq:14},{id:'p4',e:'🦑',name:'魷魚',pts:1,freq:15},
+      {id:'whale', e:'🐋',name:'鯨魚', pts:4.0, freq:3, special:false},
+      {id:'shark', e:'🦈',name:'鯊魚', pts:2.5, freq:4, special:false},
+      {id:'chest', e:'💎',name:'寶箱', pts:1.5, freq:5, special:false},
+      {id:'anchor',e:'⚓',name:'船錨', pts:0.8, freq:5, special:false},
+      {id:'wild4', e:'🐬',name:'海豚', pts:0,   freq:2, special:'wild'},
+      {id:'scatter4',e:'🐚',name:'貝殼',pts:0,  freq:1, special:'scatter'},
+      {id:'r4',e:'🦀',name:'螃蟹',  pts:0.4,freq:7},
+      {id:'b4',e:'🐠',name:'熱帶魚',pts:0.4,freq:7},
+      {id:'g4',e:'🐙',name:'章魚',  pts:0.4,freq:7},
+      {id:'p4',e:'🦑',name:'魷魚',  pts:0.4,freq:7},
     ],
-    minMatch:8, multChance:0.02, freeCount:12,
-    desc:'5×5深海世界，海豚WILD瘋狂替換',
+    minMatch:8, multChance:0.012, freeCount:12,
+    scatterMin:3, scatterNeedGold:false,
+    desc:'5×5，8個同符號消除',
   },
+
+  // ── 忍者秘法：4×6=24格，minMatch=8 ──
+  // gem 總freq=30，每種寶石期望=24×4/30≈3.2格
+  // P(一種≥8) ≈ 2.8%，整體 hit rate ≈ 29%
   ninja: {
     mid:'ninja', name:'忍者秘法', icon:'🥷', rows:4, cols:6,
     bg:'linear-gradient(135deg,#0a0a0a,#1a1a3a)',
     minBet:10,
     syms:[
-      {id:'ninja',e:'🥷',name:'忍者', pts:10, freq:1, special:false},
-      {id:'shuriken',e:'⭐',name:'手裏劍',pts:5,freq:2,special:false},
-      {id:'katana',e:'🗡️',name:'武士刀',pts:3,freq:3,special:false},
-      {id:'scroll',e:'📜',name:'秘卷', pts:2,  freq:3, special:false},
-      {id:'wild5',  e:'🎭',name:'面具', pts:0,  freq:2, special:'wild'},
-      {id:'scatter5',e:'🎋',name:'竹葉',pts:0,  freq:1, special:'scatter'},
-      {id:'r5',e:'🔴',name:'紅忍',pts:1,freq:13},{id:'b5',e:'🔵',name:'藍忍',pts:1,freq:13},
-      {id:'g5',e:'🟢',name:'綠忍',pts:1,freq:14},{id:'p5',e:'🟣',name:'紫忍',pts:1,freq:14},
+      {id:'ninja',    e:'🥷',name:'忍者', pts:4.0, freq:3, special:false},
+      {id:'shuriken', e:'🌟',name:'手裏劍',pts:2.0,freq:4, special:false},
+      {id:'katana',   e:'🗡️',name:'武士刀',pts:1.2,freq:5, special:false},
+      {id:'scroll',   e:'📜',name:'秘卷', pts:0.7, freq:5, special:false},
+      {id:'wild5',    e:'🎭',name:'面具', pts:0,   freq:2, special:'wild'},
+      {id:'scatter5', e:'🎋',name:'竹葉', pts:0,   freq:1, special:'scatter'},
+      {id:'r5',e:'🔴',name:'紅忍',pts:0.4,freq:7},
+      {id:'b5',e:'🔵',name:'藍忍',pts:0.4,freq:7},
+      {id:'g5',e:'🟢',name:'綠忍',pts:0.4,freq:7},
+      {id:'p5',e:'🟣',name:'紫忍',pts:0.4,freq:7},
     ],
-    minMatch:8, multChance:0.015, freeCount:10,
-    desc:'4×6忍者盤面，面具WILD＋竹葉散圖',
+    minMatch:8, multChance:0.010, freeCount:10,
+    scatterMin:3, scatterNeedGold:false,
+    desc:'4×6，8個同符號消除',
   },
+
+  // ── 星際爭霸：3×7=21格，minMatch=5 ──
+  // gem 總freq=24，每種寶石期望=21×3/24≈2.6格
+  // P(一種≥5) ≈ 9%，整體 hit rate ≈ 33%
   space: {
     mid:'space', name:'星際爭霸', icon:'🚀', rows:3, cols:7,
     bg:'linear-gradient(135deg,#000010,#000050)',
     minBet:10,
     syms:[
-      {id:'rocket',e:'🚀',name:'火箭',  pts:14, freq:1, special:false},
-      {id:'ufo',   e:'🛸',name:'UFO',   pts:7,  freq:1, special:false},
-      {id:'star',  e:'⭐',name:'星星',  pts:4,  freq:2, special:false},
-      {id:'planet',e:'🪐',name:'星球',  pts:3,  freq:3, special:false},
+      {id:'rocket', e:'🚀',name:'火箭', pts:6.0, freq:3, special:false},
+      {id:'ufo',    e:'🛸',name:'UFO',  pts:3.0, freq:3, special:false},
+      {id:'star',   e:'⭐',name:'星星', pts:1.8, freq:4, special:false},
+      {id:'planet', e:'🪐',name:'星球', pts:1.0, freq:5, special:false},
       {id:'wild6',  e:'👾',name:'外星人',pts:0,  freq:2, special:'wild'},
       {id:'scatter6',e:'🌌',name:'星雲', pts:0,  freq:1, special:'scatter'},
-      {id:'r6',e:'☄️',name:'隕石',pts:1,freq:13},{id:'b6',e:'💫',name:'流星',pts:1,freq:14},
-      {id:'g6',e:'🌙',name:'月亮',pts:1,freq:14},{id:'p6',e:'🌟',name:'光星',pts:1,freq:14},
+      {id:'r6',e:'☄️',name:'隕石',pts:0.5,freq:6},
+      {id:'b6',e:'💫',name:'流星',pts:0.5,freq:6},
+      {id:'g6',e:'🌙',name:'月亮',pts:0.5,freq:6},
+      {id:'p6',e:'🌟',name:'光星',pts:0.5,freq:6},
     ],
-    minMatch:4, multChance:0.02, freeCount:8,
-    desc:'3×7超寬宇宙盤面，外星人WILD大爆發',
+    minMatch:6, multChance:0.015, freeCount:8,
+    scatterMin:3, scatterNeedGold:false,
+    desc:'3×7，6個同符號消除',
   },
 };
 
@@ -1324,12 +1821,18 @@ function slSpin(){
   sl.lastWin=0;
   const M=sl.M;
   sl.grid = slNewGrid(M, isF);
-  // Keep locked mult balls on grid
-  for(const mb of sl.multBalls){
-    if(mb.locked){
-      const row=Math.min(mb.r, M.rows-1), col=Math.min(mb.c, M.cols-1);
-      sl.grid[row][col]={id:'__mb__', e:'⚡', name:'倍數球', pts:0, freq:1, special:'multball', _val:mb.val, _locked:true};
+
+  // 鎖定倍數球只在免費遊戲中持續存在
+  if(isF){
+    for(const mb of sl.multBalls){
+      if(mb.locked){
+        const row=Math.min(mb.r, M.rows-1), col=Math.min(mb.c, M.cols-1);
+        sl.grid[row][col]={id:'__mb__', e:'⚡', name:'倍數球', pts:0, freq:1, special:'multball', _val:mb.val, _locked:true};
+      }
     }
+  } else {
+    // 非免費遊戲：清除所有鎖定球，避免舊座標殘留造成格子卡藍框
+    sl.multBalls = sl.multBalls.filter(m=>!m.locked);
   }
   animDealer('dealing');
   dealerSay(isF?`🔥 免費局 ${sl.freeTotal-sl.freeLeft}/${sl.freeTotal}`:'轉動命運！🎰');
@@ -1340,6 +1843,35 @@ function slSpin(){
 function slResolve(isF){
   const M=sl.M, grid=sl.grid;
   const rows=M.rows, cols=M.cols;
+
+  // ── 0. 近大獎修飾（Near-Miss Effect）──
+  // 若 HM 本局預計是 'near' 模式，提前讓某種符號湊到 minMatch-1 個
+  // （玩家看到「差一格」的盤面，更有想再轉的衝動）
+  if(!isF && sl.cascadeRound===0 && HM.loseStreak>=1){
+    // 找當前格數最多的付費符號
+    const countMap={};
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      const cell=grid[r][c];
+      if(cell&&cell.pts>0&&!cell.special) countMap[cell.id]=(countMap[cell.id]||0)+1;
+    }
+    const topId=Object.entries(countMap).sort((a,b)=>b[1]-a[1])[0];
+    if(topId && topId[1] >= M.minMatch-3 && topId[1] < M.minMatch){
+      // 差2-3格就中：把一個低值格換成這個符號（製造近大獎）
+      const target=M.syms.find(s=>s.id===topId[0]);
+      if(target){
+        const needed=M.minMatch-1-topId[1]; // 還差幾個才到 minMatch-1
+        let placed=0;
+        outer:for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+          if(placed>=needed) break outer;
+          const cell=grid[r][c];
+          if(cell&&cell.pts>0&&cell.pts<=0.5&&cell.id!==topId[0]&&!cell.special){
+            grid[r][c]={...target};
+            placed++;
+          }
+        }
+      }
+    }
+  }
 
   // ── 1. 新增倍數球 ──
   const mbChance = isF ? M.multChance*1.3 : M.multChance;
@@ -1374,19 +1906,27 @@ function slResolve(isF){
     }
   }
 
-  // ── 3. Scatter 計數 → 免費遊戲 ──
+  // ── 3. Scatter → 免費遊戲 ──
+  // 使用各機台自訂的 scatterMin（最少幾個）和 scatterNeedGold（賽特需含金甲蟲）
   const scatterCount = grid.flat().filter(c=>c.special==='scatter'||c.special==='goldscatter').length;
-  const goldCount = grid.flat().filter(c=>c.special==='goldscatter').length;
-  if(!isF && scatterCount>=5 && (M.mid==='seth'?goldCount>=2:true) && sl.freeLeft===0){
+  const goldCount    = grid.flat().filter(c=>c.special==='goldscatter').length;
+  const sMin = M.scatterMin || 4;
+  const needGold = M.scatterNeedGold || false;
+  if(!isF && scatterCount >= sMin && (!needGold || goldCount >= 1) && sl.freeLeft===0){
     sl.freeLeft=M.freeCount; sl.freeTotal=M.freeCount;
-    dealerSay(`🎰 觸發 ${M.freeCount} 次免費遊戲！`);
+    dealerSay(`🎰 觸發${M.freeCount}次免費遊戲！`);
   }
 
   // ── 4. 計算中獎 ──
+  // 賽特額外降低15%中獎：隨機取消部分中獎
+  const sethWinCancel = (sl.mid==='seth' && Math.random()<0.15);
+  //   baseWin = sym.pts × bet        (pts 已是「中獎贏回 N 倍 bet」)
+  //   超出 minMatch 每多 1 格加 8%
+  //   最終 roundWin = baseWin × (1 + totalMult)
   const counts={};
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const cell=grid[r][c];
-    if(cell.pts<=0 || !cell.id) continue;
+    if(!cell || cell.pts<=0 || !cell.id) continue;
     if(!counts[cell.id]) counts[cell.id]=[];
     counts[cell.id].push({r,c});
   }
@@ -1394,28 +1934,33 @@ function slResolve(isF){
   const matched=new Set();
   for(const id in counts){
     const cells=counts[id];
-    if(cells.length >= M.minMatch){
+    if(cells.length >= M.minMatch && !sethWinCancel){
       const sym=M.syms.find(s=>s.id===id);
       if(!sym) continue;
-      // 每多一個超出minMatch的都加成
-      const bonus=1+Math.floor((cells.length-M.minMatch)/2)*0.15;
-      roundWin += Math.round(sym.pts * bonus * sl.bet);
+      const extra = cells.length - M.minMatch;
+      const bonus = 1 + extra * 0.08;           // 每多1格加8%
+      const symWin = Math.round(sym.pts * bonus * sl.bet);
+      roundWin += symWin;
       cells.forEach(({r,c})=>matched.add(r+'_'+c));
     }
   }
 
-  // ── 5. 套用倍數球 ──
+  // ── 5. 套用倍數球（加法，官方機制）──
+  // 官方：所有倍數球數值相加 = totalMult
+  //       最終獎金 = 基礎獎金 × totalMult
+  // 若無倍數球，totalMult=1（不加成）
   const allMBs=[...sl.multBalls];
-  // Also count mb on grid
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const cell=grid[r][c];
-    if(cell.special==='multball'){
-      const exists=allMBs.find(m=>m.r===r&&m.c===c);
-      if(!exists) allMBs.push({r,c,val:cell._val||1,locked:cell._locked||false});
+    if(cell && cell.special==='multball'){
+      if(!allMBs.find(m=>m.r===r&&m.c===c))
+        allMBs.push({r,c,val:cell._val||2,locked:cell._locked||false});
     }
   }
-  const totalMult = allMBs.length>0 ? allMBs.reduce((a,m)=>a+(m.val||0),0) : 0;
-  if(totalMult>0) roundWin = Math.round(roundWin * (1 + totalMult));
+  // 加法加總，最低為1（無球時），上限 500（官方上限）
+  const sumMult = allMBs.length>0 ? allMBs.reduce((a,m)=>a+(m.val||2),0) : 0;
+  const totalMult = Math.min(sumMult, 500);
+  if(totalMult>0 && roundWin>0) roundWin = Math.round(roundWin * totalMult);
 
   // ── 6. 賽特2特殊：男賽特分裂、女賽特鎖倍 ──
   let split=false, lockEffect=false;
@@ -1443,14 +1988,41 @@ function slResolve(isF){
     if(split&&lockEffect){sl.awaken=true;animDealer('win');dealerSay('⚡⚡ 覺醒模式！爆發！');}
   }
 
-  // ── 7. 給錢 ── （只在有中獎時給，每次 cascade 都給）
-  if(roundWin>0){
+  // ── 7. 給錢（HM v2 精細控制）──
+  // 只在第一次 cascade、非免費局 時做 HM 決策
+  if(sl.cascadeRound === 0 && !isF){
+    const hm = hmDecide(sl.bet);
+
+    if(hm.action === 'super'){
+      // 超級獎：覆蓋RNG，給大驚喜
+      roundWin = Math.round(sl.bet * hm.mult);
+      animDealer('win');
+      dealerSay(['🎊 超級獎！爆了！','💎 大爆發！恭喜！','🚀 MEGA獎！傳奇！','⚡ 今天手氣爆棚！'][Math.floor(Math.random()*4)]);
+    } else if(hm.action === 'win'){
+      // 強制給獎：不管RNG有沒有中，都給
+      const hmWin = Math.round(sl.bet * hm.mult);
+      roundWin = Math.max(roundWin, hmWin); // 取較大值（RNG中了就用RNG）
+    } else if(hm.action === 'near'){
+      // 近大獎：清掉本次獎金，但顯示安慰訊息
+      roundWin = 0;
+      hmShowNear();
+      hmRecordLose();
+    } else {
+      // lose：純輸
+      roundWin = 0;
+      hmRecordLose();
+    }
+  }
+
+  if(roundWin > 0){
     chips += roundWin;
     sl.sessionWin += roundWin;
     sl.lastWin += roundWin;
+    hmRecordWin(roundWin);
     updDisp(); save();
     if(!sl.awaken) animDealer('win');
-    dealerSay(`獲勝 ＋${roundWin}${totalMult>0?' (+'+totalMult+'加成)':''}！🎉`);
+    const multStr = totalMult>0 ? ` (倍數球×${totalMult})` : '';
+    dealerSay(`獲勝 ＋${roundWin}${multStr}！🎉`);
   }
 
   // ── 8. 消除 & 掉落 cascade ──
@@ -1470,6 +2042,18 @@ function slResolve(isF){
       for(let r=fill;r>=0;r--) grid[r][c]=slRandSym(M,isF);
     }
     sl.grid=grid;
+
+    // 重新掃描 grid，同步更新 sl.multBalls 的座標（cascade 後位置會下移）
+    const updatedMBs=[];
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      const cell=grid[r]&&grid[r][c];
+      if(cell&&cell.special==='multball'){
+        updatedMBs.push({r,c,val:cell._val||2,locked:cell._locked||false});
+      }
+    }
+    // 保留 locked balls 的記錄（以 grid 掃描結果為準）
+    sl.multBalls=updatedMBs;
+
     sl.cascadeRound++;
     slRender('');
     setTimeout(()=>slResolve(isF), 600);
@@ -1483,8 +2067,7 @@ function slResolve(isF){
     dealerSay(`免費遊戲結束！本輪贏 ${fw}！💰`);
     if(fw>0) animDealer('win');
     sl.freeTotal=0;
-    // Clear locked mult balls after free game ends
-    sl.multBalls=sl.multBalls.filter(m=>m.locked===false);
+    sl.multBalls=[]; // 免費遊戲結束：清除所有倍數球（包含鎖定的）
   }
 
   let res='';
@@ -1492,7 +2075,7 @@ function slResolve(isF){
     const big=sl.lastWin>=sl.bet*50;
     const cls=sl.awaken||big?'result-win seth-awaken':'result-win';
     const label=sl.awaken?'⚡ 覺醒爆發！':big?'💥 BIG WIN！':'🎉 獲勝！';
-    res=`<div class="result-banner ${cls} sl-win-pop">${label} ＋${sl.lastWin}${totalMult>0?' (+'+totalMult+'加成)':''}</div>`;
+    res=`<div class="result-banner ${cls} sl-win-pop">${label} ＋${sl.lastWin}${totalMult>0?' <small>(倍數球×'+totalMult+')</small>':''}</div>`;
   }
   slRender(res);
 }
@@ -1535,9 +2118,10 @@ function slRender(res){
   ${freeBar}
   <div class="seth-info">
     <div class="seth-info-box"><div class="seth-info-val">${s.bet}</div><div class="seth-info-lbl">下注</div></div>
-    <div class="seth-info-box"><div class="seth-info-val" style="color:${totalMult>0?'#ff9900':'var(--gold)'}">${totalMult>0?'+'+totalMult:'－'}</div><div class="seth-info-lbl">倍數加成</div></div>
-    <div class="seth-info-box"><div class="seth-info-val">${s.sessionWin||0}</div><div class="seth-info-lbl">本局累計</div></div>
+    <div class="seth-info-box"><div class="seth-info-val" style="color:${totalMult>0?'#ff9900':'var(--gold)'}">${totalMult>0?'×'+totalMult:'－'}</div><div class="seth-info-lbl">倍數球</div></div>
+    <div class="seth-info-box"><div class="seth-info-val" style="color:${s.sessionWin>0?'#2ecc71':'var(--gold)'}">${s.sessionWin>0?'＋':''}${s.sessionWin||0}</div><div class="seth-info-lbl">本局累計</div></div>
   </div>
+  ${(()=>{const st=hmGetStats();const streak=st.streak;return streak?`<div style="text-align:center;font-size:12px;color:#ff9900;padding:3px 0;font-weight:700;letter-spacing:1px">${streak}</div>`:'';})()}
   ${gridHTML}${res}
   <div class="seth-legend">${legendHTML}
     ${M.syms.find(x=>x.special==='wild')?`<div class="seth-sym"><span>${M.syms.find(x=>x.special==='wild').e}</span>WILD</div>`:''}
@@ -1609,6 +2193,16 @@ function slAutoBarHTML(){
   const s = sl;
   if(s.autoLeft > 0){
     const done = s.autoTotal - s.autoLeft;
+    // autoplay 全部結束時顯示本輪盈虧摘要
+    if(s.autoLeft === 1){
+      const st = hmGetStats();
+      const color = st.net >= 0 ? '#2ecc71' : '#e74c3c';
+      setTimeout(()=>{
+        if(st.net !== 0) dealerSay(st.net>0
+          ? `本輪自動旋轉：淨贏 +${st.net} 🎉`
+          : `本輪自動旋轉：淨輸 ${st.net} 💪`);
+      }, 1200);
+    }
     const pct = (done / s.autoTotal * 100).toFixed(0);
     return `<div class="auto-bar">
       <span style="font-size:12px;color:#ff9900;font-family:'Cinzel',serif;white-space:nowrap">AUTO ${done}/${s.autoTotal}</span>
@@ -1661,16 +2255,16 @@ slResolve = function(isF){
 //  CLASSIC 777 MACHINE
 // ══════════════════════════════════════════════
 const CL_SYMS = [
-  {e:'7️⃣', name:'紅7',    pts:25,  w:1},
-  {e:'💎', name:'鑽石',   pts:15,  w:1},
-  {e:'🍒', name:'櫻桃',   pts:8,   w:2},
-  {e:'🔔', name:'鈴鐺',   pts:5,   w:3},
-  {e:'🍋', name:'檸檬',   pts:3,   w:5},
-  {e:'🍊', name:'橘子',   pts:2,   w:7},
-  {e:'🍇', name:'葡萄',   pts:2,   w:10},
-  {e:'⭐', name:'星星',   pts:1,   w:13},
-  {e:'🍓', name:'草莓',   pts:1,   w:16},
-  {e:'🍀', name:'幸運草', pts:1,   w:18},
+  {e:'7️⃣', name:'紅7',    pts:25,  w:3},
+  {e:'💎', name:'鑽石',   pts:15,  w:3},
+  {e:'🍒', name:'櫻桃',   pts:8,   w:4},
+  {e:'🔔', name:'鈴鐺',   pts:5,   w:5},
+  {e:'🍋', name:'檸檬',   pts:3,   w:7},
+  {e:'🍊', name:'橘子',   pts:2,   w:9},
+  {e:'🍇', name:'葡萄',   pts:2,   w:13},
+  {e:'⭐', name:'星星',   pts:1,   w:17},
+  {e:'🍓', name:'草莓',   pts:1,   w:20},
+  {e:'🍀', name:'幸運草', pts:1,   w:22},
 ];
 const CL_WILD = {e:'🃏', name:'WILD', pts:0, w:1};
 const CL_ALL  = [...CL_SYMS, CL_WILD];
@@ -1802,7 +2396,7 @@ function clResolve(){
   }
 
   // House bias: cancel small wins 64% of the time
-  if(isWin && win < cl.bet * 5 && Math.random() < 0.64){
+  if(isWin && win < cl.bet * 5 && Math.random() < 0.74){
     isWin = false; win = 0; winLabel = '';
   }
 
@@ -2067,8 +2661,14 @@ function clResolve(){
   }
 
   let res='';
+  // 🍯 蜜月期決策
+  const hmCl = hmDecide(cl.bet);
+  if(hmCl.forceLose){ isWin=false; win=0; }
+  else if(hmCl.forceWin && hmCl.capWin !== null && isWin && win > hmCl.capWin){ win = hmCl.capWin; }
+
   if(isWin && win>0){
     chips+=win; cl.lastWin=win; cl.sessionWin+=win;
+    hmRecordWin(win);
     updDisp(); save();
     animDealer('win');
     const isBig=win>=cl.bet*8, isMega=win>=cl.bet*15;
