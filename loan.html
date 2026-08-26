@@ -758,8 +758,8 @@
 
                 <div class="input-group">
                     <label>借款金額 <span id="amountDisplay">$50,000</span></label>
-                    <input type="range" id="amountRange" min="5000" max="1000000" step="5000" value="50000">
-                    <div class="range-labels"><span>$5,000</span><span>$1,000,000</span></div>
+                    <input type="range" id="amountRange" min="1000" max="1000000" step="1000" value="50000">
+                    <div class="range-labels"><span>$1,000</span><span>$1,000,000</span></div>
                 </div>
 
                 <div class="input-group">
@@ -770,8 +770,8 @@
 
                 <div class="input-group">
                     <label>月利率 <span id="rateDisplay">1.5%</span></label>
-                    <input type="range" id="rateRange" min="0.5" max="3.0" step="0.1" value="1.5">
-                    <div class="range-labels"><span>0.5%</span><span>3.0%</span></div>
+                    <input type="range" id="rateRange" min="0" max="15" step="0.1" value="1.5">
+                    <div class="range-labels"><span>0%</span><span>15%</span></div>
                 </div>
 
                 <div class="notice">
@@ -825,16 +825,16 @@
             <div class="plan-card fade-in">
                 <div class="plan-icon">🌱</div>
                 <div class="plan-name">輕鬆小額</div>
-                <div class="plan-range">$5,000 – $50,000</div>
-                <div class="plan-rate">1.2%</div>
-                <div class="plan-rate-label">月利率起</div>
+                <div class="plan-range">$1,000 – $50,000</div>
+                <div class="plan-rate">15%</div>
+                <div class="plan-rate-label">年利率起</div>
                 <ul class="plan-features">
                     <li>最短1個月，最長24個月</li>
                     <li>線上快速申請</li>
                     <li>無需抵押品</li>
                     <li>審核最快1小時</li>
                 </ul>
-                <button class="plan-btn" onclick="openModal('5000', '50000', '1.2')">申請此方案</button>
+                <button class="plan-btn" onclick="openModal('1000', '50000', '15')">申請此方案</button>
             </div>
 
             <div class="plan-card featured fade-in">
@@ -842,30 +842,30 @@
                 <div class="plan-icon">⭐</div>
                 <div class="plan-name">標準借貸</div>
                 <div class="plan-range">$50,000 – $300,000</div>
-                <div class="plan-rate">1.5%</div>
-                <div class="plan-rate-label">月利率起</div>
+                <div class="plan-rate">12%</div>
+                <div class="plan-rate-label">年利率起</div>
                 <ul class="plan-features">
                     <li>最長36個月</li>
                     <li>專屬客服協助</li>
                     <li>彈性提前還款</li>
                     <li>審核最快3小時</li>
                 </ul>
-                <button class="plan-btn" onclick="openModal('50000', '300000', '1.5')">申請此方案</button>
+                <button class="plan-btn" onclick="openModal('50000', '300000', '12')">申請此方案</button>
             </div>
 
             <div class="plan-card fade-in">
                 <div class="plan-icon">💎</div>
                 <div class="plan-name">大額專案</div>
                 <div class="plan-range">$300,000 – $1,000,000</div>
-                <div class="plan-rate">1.8%</div>
-                <div class="plan-rate-label">月利率起</div>
+                <div class="plan-rate">10%</div>
+                <div class="plan-rate-label">年利率起</div>
                 <ul class="plan-features">
                     <li>最長60個月</li>
                     <li>需提供擔保品</li>
                     <li>個人化還款方案</li>
                     <li>專案經理服務</li>
                 </ul>
-                <button class="plan-btn" onclick="openModal('300000', '1000000', '1.8')">申請此方案</button>
+                <button class="plan-btn" onclick="openModal('300000', '1000000', '10')">申請此方案</button>
             </div>
         </div>
     </div>
@@ -994,7 +994,7 @@
             <div class="form-group">
                 <label>需求金額</label>
                 <select id="lf_amount">
-                    <option>$5,000 – $50,000（輕鬆小額）</option>
+                    <option>$1,000 – $50,000（輕鬆小額）</option>
                     <option>$50,000 – $300,000（標準借貸）</option>
                     <option>$300,000 – $1,000,000（大額專案）</option>
                 </select>
@@ -1077,7 +1077,7 @@
         document.getElementById('modalOverlay').classList.add('active');
         if (minAmt) {
             const sel = document.getElementById('lf_amount');
-            const map = { '5000': 0, '50000': 1, '300000': 2 };
+            const map = { '1000': 0, '50000': 1, '300000': 2 };
             if (map[minAmt] !== undefined) sel.selectedIndex = map[minAmt];
         }
     }
