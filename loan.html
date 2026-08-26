@@ -666,6 +666,13 @@
             border-color: var(--purple);
         }
 
+        .modal-form input[readonly] {
+            background: #f3f4f6;
+            color: var(--text);
+            font-weight: 600;
+            cursor: default;
+        }
+
         .modal-submit {
             width: 100%;
             padding: 14px;
@@ -1049,23 +1056,12 @@
                 <input id="lf_phone" type="tel" placeholder="09XX-XXX-XXX" required>
             </div>
             <div class="form-group">
-                <label>需求金額</label>
-                <select id="lf_amount">
-                    <option>$1,000 – $50,000（輕鬆小額）</option>
-                    <option>$50,000 – $300,000（標準借貸）</option>
-                    <option>$300,000 – $1,000,000（大額專案）</option>
-                </select>
+                <label>需求金額 <span style="font-size:12px; font-weight:400; color:var(--gray);">（依試算結果自動帶入）</span></label>
+                <input id="lf_amount" type="text" readonly>
             </div>
             <div class="form-group">
-                <label>希望還款期數</label>
-                <select id="lf_term">
-                    <option>6 個月</option>
-                    <option>12 個月</option>
-                    <option>24 個月</option>
-                    <option>36 個月</option>
-                    <option>48 個月</option>
-                    <option>60 個月</option>
-                </select>
+                <label>希望還款期數 <span style="font-size:12px; font-weight:400; color:var(--gray);">（依試算結果自動帶入）</span></label>
+                <input id="lf_term" type="text" readonly>
             </div>
             <div class="form-group">
                 <label>身分證正面</label>
@@ -1196,13 +1192,27 @@
     }
 
     // ── Modal ──
-    function openModal(minAmt, maxAmt, rate) {
-        document.getElementById('modalOverlay').classList.add('active');
+    function syncFormWithCalculator() {
+        document.getElementById('lf_amount').value = formatMoney(+amountRange.value);
+        document.getElementById('lf_term').value = termRange.value + ' 個月';
+    }
+
+    function openModal(minAmt, maxAmt, annualRate) {
+        // 若從方案卡片點擊進來，先把計算機帶到該方案的條件
         if (minAmt) {
-            const sel = document.getElementById('lf_amount');
-            const map = { '1000': 0, '50000': 1, '300000': 2 };
-            if (map[minAmt] !== undefined) sel.selectedIndex = map[minAmt];
+            amountRange.value = minAmt;
         }
+        if (annualRate) {
+            let monthlyRate = +annualRate / 12;
+            monthlyRate = Math.max(+rateRange.min, Math.min(+rateRange.max, monthlyRate));
+            rateRange.value = monthlyRate.toFixed(1);
+        }
+        if (minAmt || annualRate) {
+            calcLoan();
+        }
+
+        syncFormWithCalculator();
+        document.getElementById('modalOverlay').classList.add('active');
     }
 
     function closeModal() {
