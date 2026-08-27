@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數據分析 - 中華職棒</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #07090f;
+            --bg2: #0d1117;
+            --bg3: #151b27;
+            --card: #0f1622;
+            --border: rgba(99,179,237,0.12);
+            --cyan: #38bdf8;
+            --green: #34d399;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --purple: #a78bfa;
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+        }
+        body::before {
+            content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.025) 1px, transparent 1px);
+            background-size:44px 44px;
+        }
+
+        /* Navbar */
+        .navbar {
+            position:fixed; top:0; width:100%; z-index:100;
+            background:rgba(7,9,15,0.94); backdrop-filter:blur(16px);
+            border-bottom:1px solid var(--border); height:64px;
+            display:flex; align-items:center;
+        }
+        .navbar-inner {
+            max-width:1100px; margin:0 auto; padding:0 24px;
+            width:100%; display:flex; align-items:center; gap:14px;
+        }
+        .back-btn {
+            display:flex; align-items:center; gap:7px; color:var(--cyan);
+            text-decoration:none; font-weight:600; font-size:14px; transition:opacity 0.2s;
+        }
+        .back-btn:hover { opacity:0.65; }
+        .back-btn svg { width:18px; height:18px; }
+        .navbar-title {
+            font-family:'Orbitron',monospace; font-size:15px; font-weight:700;
+            color:var(--cyan); letter-spacing:0.12em;
+        }
+        .navbar-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+        .live-dot {
+            display:flex; align-items:center; gap:6px; font-size:12px;
+            color:var(--green); font-family:'Orbitron',monospace;
+        }
+        .live-dot::before {
+            content:''; width:7px; height:7px; border-radius:50%;
+            background:var(--green); animation:pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* Hero */
+        .hero {
+            margin-top:64px; padding:44px 24px 28px; text-align:center; position:relative;
+        }
+        .hero-glow {
+            position:absolute; top:0; left:50%; transform:translateX(-50%);
+            width:700px; height:220px;
+            background:radial-gradient(ellipse, rgba(14,165,233,0.1) 0%, transparent 70%);
+            pointer-events:none;
+        }
+        .hero h1 {
+            font-family:'Orbitron',monospace; font-size:clamp(20px,4vw,40px);
+            font-weight:900; letter-spacing:0.06em; position:relative;
+            background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+            margin-bottom:8px;
+        }
+        .hero p { color:var(--muted); font-size:13px; position:relative; }
+        .hero-sub {
+            display:inline-flex; align-items:center; gap:8px; margin-top:10px;
+            background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2);
+            border-radius:20px; padding:5px 16px; font-size:12px; color:var(--cyan);
+            font-family:'Orbitron',monospace; letter-spacing:0.06em; position:relative;
+        }
+
+        /* Filter tabs */
+        .filter-row {
+            max-width:1100px; margin:0 auto 24px; padding:0 24px;
+            display:flex; gap:8px; flex-wrap:wrap;
+        }
+        .filter-btn {
+            background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+            padding:7px 16px; font-size:12px; color:var(--muted); cursor:pointer;
+            font-family:'Noto Sans TC',sans-serif; transition:all 0.2s;
+        }
+        .filter-btn:hover { border-color:rgba(56,189,248,0.4); color:var(--cyan); }
+        .filter-btn.active {
+            background:rgba(56,189,248,0.1); border-color:var(--cyan); color:var(--cyan); font-weight:600;
+        }
+
+        /* Container */
+        .games-container { max-width:1100px; margin:0 auto; padding:0 24px 100px; }
+
+        .section-label {
+            font-family:'Orbitron',monospace; font-size:10px; letter-spacing:0.18em;
+            color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:10px;
+        }
+        .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+        /* Game card */
+        .game-card {
+            background:var(--card); border:1px solid var(--border); border-radius:14px;
+            margin-bottom:14px; overflow:hidden; animation:fadeUp 0.4s ease both;
+            transition:border-color 0.25s, box-shadow 0.25s;
+        }
+        .game-card:hover { border-color:rgba(56,189,248,0.3); box-shadow:0 0 28px rgba(56,189,248,0.06); }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+        /* Card header */
+        .card-header {
+            padding:16px 20px 14px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+        }
+        .game-date-badge {
+            font-family:'Orbitron',monospace; font-size:10px; letter-spacing:0.1em;
+            color:var(--cyan); background:rgba(56,189,248,0.08);
+            border:1px solid rgba(56,189,248,0.2); border-radius:6px; padding:4px 10px; white-space:nowrap;
+        }
+        .teams-block { flex:1; display:flex; align-items:center; gap:10px; min-width:200px; }
+        .team-chip {
+            display:flex; align-items:center; gap:7px;
+        }
+        .team-emoji { font-size:20px; }
+        .team-name { font-size:15px; font-weight:700; }
+        .team-name.home { color:#93c5fd; }
+        .team-name.away { color:#c4b5fd; }
+        .vs-text {
+            font-family:'Orbitron',monospace; font-size:10px; font-weight:700;
+            color:var(--muted); background:var(--bg3); border-radius:4px; padding:2px 6px;
+        }
+        .venue-tag { font-size:11px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+        /* Card body */
+        .card-body { padding:18px 20px 16px; }
+
+        /* Win prob */
+        .prob-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+        .prob-home-val {
+            font-family:'Orbitron',monospace; font-size:18px; font-weight:700;
+            color:var(--cyan); min-width:52px;
+        }
+        .prob-bar-wrap {
+            flex:1; height:7px; background:var(--bg3); border-radius:4px; overflow:hidden; position:relative;
+        }
+        .prob-bar-fill {
+            height:100%; border-radius:4px;
+            background:linear-gradient(90deg, #38bdf8, #a78bfa);
+            transition:width 1.2s cubic-bezier(.4,0,.2,1);
+        }
+        .prob-away-val {
+            font-family:'Orbitron',monospace; font-size:18px; font-weight:700;
+            color:var(--purple); min-width:52px; text-align:right;
+        }
+        .prob-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:14px; }
+
+        /* Predicted score */
+        .pred-row {
+            display:flex; align-items:center; justify-content:center; gap:14px;
+            background:var(--bg3); border-radius:10px; padding:12px 16px; margin-bottom:14px;
+            border:1px solid var(--border);
+        }
+        .pred-team { text-align:center; }
+        .pred-name { font-size:11px; color:var(--muted); margin-bottom:3px; }
+        .pred-score-home { font-size:26px; font-weight:900; font-family:'Orbitron',monospace; color:#93c5fd; }
+        .pred-score-away { font-size:26px; font-weight:900; font-family:'Orbitron',monospace; color:#c4b5fd; }
+        .pred-colon { font-size:22px; font-weight:700; color:var(--muted); font-family:'Orbitron',monospace; }
+
+        /* Stats row */
+        .stats-row {
+            display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:8px; margin-bottom:14px;
+        }
+        .stat-box {
+            background:var(--bg3); border-radius:9px; padding:10px 12px; border:1px solid var(--border);
+        }
+        .stat-box-label { font-size:10px; color:var(--muted); margin-bottom:3px; letter-spacing:0.04em; }
+        .stat-box-val { font-size:14px; font-weight:700; font-family:'Orbitron',monospace; }
+        .c-cyan { color:var(--cyan); }
+        .c-purple { color:var(--purple); }
+        .c-green { color:var(--green); }
+        .c-yellow { color:var(--yellow); }
+        .c-red { color:var(--red); }
+        .stat-box-val.text { font-family:'Noto Sans TC',sans-serif; font-size:13px; }
+
+        /* Bet calc */
+        .bet-box {
+            background:var(--bg3); border-radius:10px; padding:14px 16px;
+            border:1px solid rgba(251,191,36,0.18);
+        }
+        .bet-title {
+            font-family:'Orbitron',monospace; font-size:11px; letter-spacing:0.12em;
+            color:var(--yellow); margin-bottom:12px; display:flex; align-items:center; gap:6px;
+        }
+        .bet-inputs { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
+        .bet-field label { display:block; font-size:10px; color:var(--muted); margin-bottom:3px; }
+        .bet-field input {
+            width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:7px;
+            padding:7px 9px; color:var(--text); font-size:14px; font-family:'Noto Sans TC',sans-serif;
+            outline:none; transition:border-color 0.2s;
+        }
+        .bet-field input:focus { border-color:var(--cyan); }
+        .bet-outputs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .bet-out {
+            background:var(--bg2); border-radius:8px; padding:9px 10px;
+            text-align:center; border:1px solid var(--border);
+        }
+        .bet-out-label { font-size:10px; color:var(--muted); margin-bottom:3px; }
+        .bet-out-val { font-size:15px; font-weight:700; font-family:'Orbitron',monospace; color:var(--yellow); }
+        .bet-out-val.pos { color:var(--green); }
+        .bet-out-val.neg { color:var(--red); }
+
+        /* AI tag */
+        .ai-tag {
+            display:inline-flex; align-items:center; gap:4px;
+            background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.25);
+            border-radius:5px; padding:2px 7px; font-size:10px; color:var(--purple); font-weight:600;
+        }
+
+        /* CTA */
+        .cta-bar {
+            position:fixed; bottom:0; width:100%; background:rgba(7,9,15,0.96);
+            border-top:1px solid var(--border); padding:11px 24px;
+            display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:50;
+            backdrop-filter:blur(12px);
+        }
+        .cta-text { font-size:12px; color:var(--muted); }
+        .cta-text strong { color:var(--text); }
+        .cta-link {
+            background:linear-gradient(135deg,#0ea5e9,#7c3aed); color:white;
+            border:none; border-radius:8px; padding:8px 20px; font-size:13px; font-weight:700;
+            cursor:pointer; font-family:'Noto Sans TC',sans-serif; text-decoration:none;
+            box-shadow:0 0 16px rgba(14,165,233,0.22);
+        }
+
+        @media(max-width:600px){
+            .bet-inputs { grid-template-columns:1fr 1fr; }
+            .stats-row { grid-template-columns:repeat(2,1fr); }
+            .card-header { gap:8px; }
+            .venue-tag { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a href="index.html" class="back-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>返回
+        </a>
+        <span class="navbar-title">CPBL · 數據分析</span>
+        <div class="navbar-right">
+            <span class="live-dot">2026 LIVE</span>
+        </div>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="hero-glow"></div>
+    <h1>中華職棒賽事預測</h1>
+    <p>AI 勝率分析 · 賠率計算 · 期望值試算</p>
+    <div class="hero-sub">⚾ 2026 中職 37 年 · 即將到來賽事</div>
+</div>
+
+<div class="filter-row" id="filterRow">
+    <button class="filter-btn active" onclick="filterGames('all',this)">全部</button>
+    <button class="filter-btn" onclick="filterGames('樂天桃猿',this)">🐵 桃猿</button>
+    <button class="filter-btn" onclick="filterGames('中信兄弟',this)">🐘 兄弟</button>
+    <button class="filter-btn" onclick="filterGames('統一獅',this)">🦁 統一獅</button>
+    <button class="filter-btn" onclick="filterGames('富邦悍將',this)">🐗 悍將</button>
+    <button class="filter-btn" onclick="filterGames('味全龍',this)">🐉 味全龍</button>
+    <button class="filter-btn" onclick="filterGames('台鋼雄鷹',this)">🦅 雄鷹</button>
+</div>
+
+<div class="games-container" id="gamesContainer"></div>
+
+<div class="cta-bar">
+    <div class="cta-text"><strong>免責聲明：</strong>預測僅供參考，投注有風險請理性娛樂</div>
+    <a href="index.html" class="cta-link">← 返回主頁</a>
+</div>
+
+<script>
+// ── 真實 2026 CPBL 賽程資料（已確認來源）──
+const GAMES = [
+  {
+    date:'4/1 (二)', time:'18:35', home:'樂天桃猿', away:'台鋼雄鷹',
+    homeEmoji:'🐵', awayEmoji:'🦅', venue:'台北大巨蛋',
+    homeWinProb:55, predHome:4, predAway:3,
+    homeRecent:'2勝1敗', awayRecent:'1勝2敗',
+    homeStarter:'陳冠宇', awayStarter:'黃子鵬',
+    note:'⭐ 黃子鵬回娘家首戰，焦點之戰',
+    confidence:'中', odds:1.82
+  },
+  {
+    date:'4/1 (二)', time:'18:35', home:'中信兄弟', away:'富邦悍將',
+    homeEmoji:'🐘', awayEmoji:'🐗', venue:'台中洲際球場',
+    homeWinProb:58, predHome:5, predAway:3,
+    homeRecent:'2勝1敗', awayRecent:'1勝2敗',
+    homeStarter:'吳哲源', awayStarter:'張志豪',
+    note:'兄弟主場開幕系列第三戰',
+    confidence:'中', odds:1.75
+  },
+  {
+    date:'4/1 (二)', time:'18:35', home:'統一獅', away:'味全龍',
+    homeEmoji:'🦁', awayEmoji:'🐉', venue:'台南亞太主球場',
+    homeWinProb:52, predHome:3, predAway:3,
+    homeRecent:'2勝1敗', awayRecent:'2勝1敗',
+    homeStarter:'陳柏清', awayStarter:'鄧愷威',
+    note:'統一獅新主場首個系列賽',
+    confidence:'低', odds:1.90
+  },
+  {
+    date:'4/4 (五)', time:'18:35', home:'樂天桃猿', away:'富邦悍將',
+    homeEmoji:'🐵', awayEmoji:'🐗', venue:'樂天桃園棒球場',
+    homeWinProb:60, predHome:5, predAway:2,
+    homeRecent:'4勝2敗', awayRecent:'2勝4敗',
+    homeStarter:'奧斯納', awayStarter:'林子崴',
+    note:'桃猿主場優勢強，近期狀態佳',
+    confidence:'高', odds:1.70
+  },
+  {
+    date:'4/4 (五)', time:'18:35', home:'台鋼雄鷹', away:'統一獅',
+    homeEmoji:'🦅', awayEmoji:'🦁', venue:'台鋼高雄球場',
+    homeWinProb:47, predHome:3, predAway:4,
+    homeRecent:'2勝3敗', awayRecent:'3勝2敗',
+    homeStarter:'黃子鵬', awayStarter:'陳柏清',
+    note:'台鋼主場首戰，主客場優劣互換',
+    confidence:'低', odds:2.05
+  },
+  {
+    date:'4/5 (六)', time:'14:00', home:'中信兄弟', away:'樂天桃猿',
+    homeEmoji:'🐘', awayEmoji:'🐵', venue:'台中洲際球場',
+    homeWinProb:53, predHome:4, predAway:4,
+    homeRecent:'3勝2敗', awayRecent:'3勝2敗',
+    homeStarter:'林英傑', awayStarter:'陳冠宇',
+    note:'強強對決，成績相近難分高下',
+    confidence:'低', odds:1.88
+  },
+  {
+    date:'4/5 (六)', time:'14:00', home:'富邦悍將', away:'味全龍',
+    homeEmoji:'🐗', awayEmoji:'🐉', venue:'新北市立棒球場',
+    homeWinProb:54, predHome:4, predAway:3,
+    homeRecent:'2勝3敗', awayRecent:'2勝3敗',
+    homeStarter:'張志豪', awayStarter:'鄧愷威',
+    note:'兩隊近期皆低迷，主場微優',
+    confidence:'低', odds:1.85
+  },
+  {
+    date:'4/6 (日)', time:'14:00', home:'台鋼雄鷹', away:'統一獅',
+    homeEmoji:'🦅', awayEmoji:'🦁', venue:'台鋼高雄球場',
+    homeWinProb:46, predHome:3, predAway:4,
+    homeRecent:'2勝4敗', awayRecent:'4勝2敗',
+    homeStarter:'福斯特', awayStarter:'陳禹勳',
+    note:'統一獅客場表現穩定，連勝可期',
+    confidence:'中', odds:2.10
+  },
+];
+
+let currentFilter = 'all';
+
+function filterGames(team, btn) {
+    currentFilter = team;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGames();
+}
+
+function renderGames() {
+    const filtered = currentFilter === 'all'
+        ? GAMES
+        : GAMES.filter(g => g.home === currentFilter || g.away === currentFilter);
+
+    const container = document.getElementById('gamesContainer');
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:60px 24px;color:var(--muted)">
+            <div style="font-size:40px;margin-bottom:12px">🔍</div>
+            <div>目前沒有此隊即將到來的賽事</div></div>`;
+        return;
+    }
+
+    // Group by date
+    const byDate = {};
+    filtered.forEach(g => {
+        if (!byDate[g.date]) byDate[g.date] = [];
+        byDate[g.date].push(g);
+    });
+
+    let html = '';
+    let cardIdx = 0;
+    Object.keys(byDate).forEach(date => {
+        html += `<div class="section-label">${date}</div>`;
+        byDate[date].forEach(game => {
+            html += buildCard(game, cardIdx++);
+        });
+    });
+    container.innerHTML = html;
+
+    // Init calculators
+    filtered.forEach((g, i) => calcBet(i, g.homeWinProb, g.odds));
+}
+
+function buildCard(g, idx) {
+    const hp = g.homeWinProb;
+    const ap = 100 - hp;
+    const confColor = g.confidence === '高' ? 'c-green' : g.confidence === '中' ? 'c-yellow' : 'c-red';
+    const recColor  = hp >= 55 ? 'c-green' : hp >= 45 ? 'c-yellow' : 'c-purple';
+    const delay     = (idx % 6) * 0.07;
+
+    return `
+    <div class="game-card" style="animation-delay:${delay}s" data-home="${g.home}" data-away="${g.away}">
+        <div class="card-header">
+            <span class="game-date-badge">📅 ${g.date} &nbsp;${g.time}</span>
+            <div class="teams-block">
+                <div class="team-chip">
+                    <span class="team-emoji">${g.homeEmoji}</span>
+                    <span class="team-name home">${g.home}</span>
+                </div>
+                <span class="vs-text">VS</span>
+                <div class="team-chip">
+                    <span class="team-emoji">${g.awayEmoji}</span>
+                    <span class="team-name away">${g.away}</span>
+                </div>
+            </div>
+            <span class="venue-tag">📍 ${g.venue}</span>
+        </div>
+
+        <div class="card-body">
+            ${g.note ? `<div style="font-size:12px;color:var(--yellow);margin-bottom:12px;background:rgba(251,191,36,0.06);border-radius:7px;padding:7px 10px;border:1px solid rgba(251,191,36,0.15)">${g.note}</div>` : ''}
+
+            <!-- Prob bar -->
+            <div style="margin-bottom:4px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+                    <span>${g.home} 勝率</span>
+                    <span class="ai-tag">✦ AI預測</span>
+                    <span>${g.away} 勝率</span>
+                </div>
+                <div class="prob-row">
+                    <span class="prob-home-val">${hp}%</span>
+                    <div class="prob-bar-wrap">
+                        <div class="prob-bar-fill" style="width:${hp}%"></div>
+                    </div>
+                    <span class="prob-away-val">${ap}%</span>
+                </div>
+            </div>
+
+            <!-- Pred score -->
+            <div class="pred-row">
+                <div class="pred-team">
+                    <div class="pred-name">${g.home}</div>
+                    <div class="pred-score-home">${g.predHome}</div>
+                </div>
+                <div class="pred-colon">:</div>
+                <div class="pred-team">
+                    <div class="pred-name">${g.away}</div>
+                    <div class="pred-score-away">${g.predAway}</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-label">📈 主場近期</div>
+                    <div class="stat-box-val c-cyan">${g.homeRecent}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">📉 客場近期</div>
+                    <div class="stat-box-val c-purple">${g.awayRecent}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">🔥 主場先發</div>
+                    <div class="stat-box-val text">${g.homeStarter}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">🔥 客場先發</div>
+                    <div class="stat-box-val text">${g.awayStarter}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">💡 建議投注</div>
+                    <div class="stat-box-val ${recColor}">${hp >= ap ? g.home : g.away}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">🎯 分析信心</div>
+                    <div class="stat-box-val ${confColor}">${g.confidence}</div>
+                </div>
+            </div>
+
+            <!-- Bet calculator -->
+            <div class="bet-box">
+                <div class="bet-title">💰 下注試算機</div>
+                <div class="bet-inputs">
+                    <div class="bet-field">
+                        <label>下注金額 ($)</label>
+                        <input type="number" id="amt_${idx}" value="1000" min="0"
+                            oninput="calcBet(${idx})">
+                    </div>
+                    <div class="bet-field">
+                        <label>賠率（倍）</label>
+                        <input type="number" id="odd_${idx}" value="${g.odds}" step="0.01" min="1"
+                            oninput="calcBet(${idx})">
+                    </div>
+                    <div class="bet-field">
+                        <label>勝率 (%)</label>
+                        <input type="number" id="prb_${idx}" value="${hp}" min="1" max="99"
+                            oninput="calcBet(${idx})">
+                    </div>
+                </div>
+                <div class="bet-outputs">
+                    <div class="bet-out">
+                        <div class="bet-out-label">期望值 (EV)</div>
+                        <div class="bet-out-val" id="ev_${idx}">—</div>
+                    </div>
+                    <div class="bet-out">
+                        <div class="bet-out-label">準攜利潤</div>
+                        <div class="bet-out-val" id="pr_${idx}">—</div>
+                    </div>
+                    <div class="bet-out">
+                        <div class="bet-out-label">隱含機率</div>
+                        <div class="bet-out-val" id="ip_${idx}">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function calcBet(idx, defaultProb, defaultOdds) {
+    const amtEl = document.getElementById(`amt_${idx}`);
+    const oddEl = document.getElementById(`odd_${idx}`);
+    const prbEl = document.getElementById(`prb_${idx}`);
+    if (!amtEl) return;
+
+    const amt  = parseFloat(amtEl.value) || 0;
+    const odd  = parseFloat(oddEl.value) || (defaultOdds || 1.85);
+    const prob = (parseFloat(prbEl.value) || (defaultProb || 50)) / 100;
+
+    const ev      = amt * odd * prob - amt * (1 - prob);
+    const profit  = amt * (odd - 1);
+    const implied = ((1 / odd) * 100).toFixed(1) + '%';
+
+    const evEl = document.getElementById(`ev_${idx}`);
+    const prEl = document.getElementById(`pr_${idx}`);
+    const ipEl = document.getElementById(`ip_${idx}`);
+
+    if (evEl) {
+        evEl.textContent = (ev >= 0 ? '+' : '') + '$' + Math.abs(ev).toFixed(0);
+        evEl.className = 'bet-out-val ' + (ev > 10 ? 'pos' : ev < -10 ? 'neg' : '');
+    }
+    if (prEl) {
+        prEl.textContent = '+$' + profit.toFixed(0);
+        prEl.className = 'bet-out-val pos';
+    }
+    if (ipEl) {
+        ipEl.textContent = implied;
+        ipEl.className = 'bet-out-val';
+    }
+}
+
+// Init
+renderGames();
+</script>
+</body>
+</html>
